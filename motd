@@ -1,0 +1,13 @@
+*========================================================================
+* This server was setup & config by VPSSIM
+*========================================================================
+* Command to call VPSSIM Menu:    vpssim 
+*========================================================================
+* If you can not access Phpmyadmin, download backup files ... Fix by 
+*------------------------------------------------------------------------
+* using [Open Phpmyadmin Port] function in [Phpmyadmin Manage].
+*------------------------------------------------------------------------
+* If your server support create SWAP, you should use [Swap Manage] to 
+*------------------------------------------------------------------------
+* create it to have a better performance.
+*========================================================================
