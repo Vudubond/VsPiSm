@@ -1,6 +1,6 @@
 # VsPiSm
 
-Where is the creator of VPSSIM.COM - VPS is SIMple ! ???
+Where is the creator of VPS?
 
 Is he dead or just being pig not update the script for along time..?
 
