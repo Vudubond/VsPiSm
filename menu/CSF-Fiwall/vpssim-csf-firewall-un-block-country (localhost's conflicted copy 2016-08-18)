@@ -1,0 +1,87 @@
+#!/bin/bash 
+. /home/vpssim.conf
+rm -rf /tmp/vpssimcheckcountrycode*
+echo "========================================================================="
+if [ -f /etc/csf/csf.conf ]; then
+test_csf=$(csf -v | awk 'NR==1 {print $NF}')
+if [ "$test_csf" == "enable" ]; then
+echo "This function will enable CSF firewall if you are disabling it on server"
+echo "-------------------------------------------------------------------------" 
+fi
+countryblicklist=`grep "CC_DENY =\ " /etc/csf/csf.conf | awk 'NR==1 {print $3}' | cut -d \" -f 2`
+countryblicklistchieudoc=`grep "CC_DENY =\ " /etc/csf/csf.conf | awk 'NR==1 {print $3}' | cut -d \" -f 2 | awk -F, '{for (i=1;i<=NF;i++)print $i}'`
+if [ "$countryblicklist" = "" ]; then
+clear
+echo "========================================================================="
+echo "Current CSF Firewall do not block any country. "
+echo "-------------------------------------------------------------------------"
+echo "You do not use this function."
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+else
+
+for manuoc in $countryblicklistchieudoc; do
+echo "$(grep "|${manuoc}|" /etc/vpssim/menu/CSF-Fiwall/vpssim-country-code | sed "s/|${manuoc}|//")" >> /tmp/vpssimcheckcountrycode_list_show
+done
+
+sonuoc=`cat /tmp/vpssimcheckcountrycode_list_show | wc -l`
+if [ ! "$sonuoc" = 1 ]; then
+nuoc=countries
+hoithoai1=`echo "Current $sonuoc countries are blocked by CSF Firewall:"`
+hoithoai2=`echo "You want unblock all countries ?"`
+hoithoai3=`echo "Unblocked all countries successful !"`
+else
+nuoc=country
+hoithoai1=`echo "Current CSF Firewall block:"`
+hoithoai2=`echo "You want to unblock this country ?"`
+hoithoai3=`echo "Unblocked $(cat /tmp/vpssimcheckcountrycode_list_show) successful !"`
+fi
+echo "$hoithoai1"
+echo "-------------------------------------------------------------------------"
+cat /tmp/vpssimcheckcountrycode_list_show | pr -2 -t
+echo "========================================================================="
+  read -r -p "$hoithoai2 [y/N] " response
+
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait ...";sleep 1
+sed -i "s/.*CC_DENY\ =.*/CC_DENY = \"\"/g" /etc/csf/csf.conf
+if [ "$test_csf" == "enable" ]; then
+csf -e
+fi
+csf -r
+clear
+echo "========================================================================="
+echo "$hoithoai3"
+rm -rf /tmp/vpssimcheckcountrycode*
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+;;
+    *)
+clear 
+echo "========================================================================= "
+echo "Cancel !"
+rm -rf /tmp/vpssimcheckcountrycode*
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+        ;;
+esac
+fi
+else
+echo "========================================================================= "
+echo "This funcion run with CSF Firewall"
+echo "-------------------------------------------------------------------------"
+echo "CSF Firewall is not installed ! "
+echo "-------------------------------------------------------------------------"
+read -r -p "Do you want to install CSF Firewall on this VPS [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+/etc/vpssim/menu/CSF-Fiwall/vpssim-cai-dat-csf-csf
+;;
+esac
+clear
+echo "========================================================================= "
+echo "You cancel install CSF Firewall ! "
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi
+
+

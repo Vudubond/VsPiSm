@@ -1,0 +1,32 @@
+#!/bin/bash
+. /home/vpssim.conf
+randomcode=`date |md5sum |cut -c '1-12'`
+echo "========================================================================="
+echo "Use this function to view all services running on system"
+echo "-------------------------------------------------------------------------"
+echo "And the ram size these services using. "
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to view this list ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait ...";sleep 1
+rm -rf /home/$mainsite/private_html/ServiceandRamuseage*
+/etc/vpssim/menu/tienich/vpssim-tien-trinh-dang-chay-ram-use > /home/$mainsite/private_html/ServiceandRamuseage-$randomcode.txt 
+sed -i '/vpssim/d' /home/$mainsite/private_html/ServiceandRamuseage-$randomcode.txt
+sed -i '1s/^/====================================================================================================================================\n/' /home/$mainsite/private_html/ServiceandRamuseage-$randomcode.txt
+sed -i '1s/^/List Service Running And Ram Useage  -  Created by VPSSIM\n/' /home/$mainsite/private_html/ServiceandRamuseage-$randomcode.txt
+sed -i '1s/^/====================================================================================================================================\n/' /home/$mainsite/private_html/ServiceandRamuseage-$randomcode.txt
+echo "============================================================The End=================================================================" >> /home/$mainsite/private_html/ServiceandRamuseage-$randomcode.txt
+clear
+echo "========================================================================="
+echo "Link View Service running & Ram usage:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/ServiceandRamuseage-$randomcode.txt"
+/etc/vpssim/menu/vpssim-tien-ich
+        ;;
+    *)
+       clear
+/etc/vpssim/menu/vpssim-tien-ich
+        ;;
+esac

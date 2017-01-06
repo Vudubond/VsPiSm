@@ -1,0 +1,37 @@
+#!/bin/bash
+. /etc/vpssim/vpssim.conf
+prompt="Choice:"
+options=( "Exit")
+printf "=========================================================================\n"
+printf "           VPSSIM - Manage VPS/Server by VPSSIM.COM \n"
+printf "=========================================================================\n"
+printf "                        Intructions for use	 \n"
+printf "=========================================================================\n"
+printf "basic information:\n"
+printf "+ Path of file vhost of domain: /etc/nginx/conf.d/domain.com.conf\n"
+printf "+ Path of php.ini: /etc/php.ini\n"
+printf "+ Code supports automatically download: Wordpress,PhpBB,Opencart,Joomla,MyBB\n"
+printf "+ If you find mistake when installing a forum because that forum use MySQL Engine which is InnoDB thì\n"
+printf " edit: /etc/my.cnf.d/server.cnf, add # before skip-innodb =>restart Nginx\n"
+printf "+ IF you download wordpress by VPSSIM Script, Vhost will be configured\n"
+printf "optimum, you can use it right now. Permalink operates perfect.  \n"
+printf "+ Worpdress: VPS config optimum for Wp super cache. You should not use W3 Total.\n"
+printf "+ when you edit code, you must Clear Opcache.if not,code will not be changed.\n"
+printf "+ VPS must have Swap for operating better. SWAP has capacity by RAM.\n"
+printf "+ if you install PHPBB,after installing, you have to Clear OPcache for avoiding mistakes.\n"
+printf "=========================================================================\n"
+printf " This is a basic introduction. For more detail \n"
+printf "Lets access to VPSSIM.COM for viewing some articles \n"
+printf "=========================================================================\n"
+
+PS3="$prompt"
+select opt in "${options[@]}" ; do 
+
+    case "$REPLY" in
+
+ 1) clear && /bin/vpssim;;
+        *) echo "You typed wrong, please type in the ordinal number on the list ";continue;;
+
+    esac
+
+done

@@ -1,0 +1,111 @@
+#!/bin/bash
+
+. /home/vpssim.conf
+
+echo "========================================================================="
+echo "Default Wp-cron.php is always Enable for Wordpress Website" 
+echo "-------------------------------------------------------------------------"
+echo "Use this function to ENABLE or DISABLE this file."
+echo "========================================================================="
+echo -n "Type in website [ENTER]: " 
+read website
+website=`echo $website | tr '[A-Z]' '[a-z]'`
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please fill accurately."
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+clear
+echo "========================================================================="
+echo "$website maybe not a domain name!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "$website is not exist in the system!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ ! -f /home/$website/public_html/wp-config.php ]; then
+clear
+echo "========================================================================="
+echo "$website not using wordpress code or did not finish setup!"
+echo "-------------------------------------------------------------------------"
+echo "Please setup wordpress first or try with other domain"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+
+if [ ! "$(grep "DISABLE_WP_CRON" /home/$website/public_html/wp-config.php)" == "" ]; then
+echo "========================================================================="
+echo "$website current DISABLE WP-Cron.php !"
+echo "-------------------------------------------------------------------------"
+read -r -p "Do you want to ENABLE it ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait..."
+    		
+    sleep 1
+ 
+sed -i '/DISABLE_WP_CRON/d' /home/$website/public_html/wp-config.php  
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service php-fpm restart
+else
+systemctl restart php-fpm.service
+fi
+clear
+echo "========================================================================="
+	echo "ENABLE wp-cron.php for $website successfully !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+        ;;
+    *)
+       clear
+    echo "========================================================================="
+   echo "Cancel !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+        ;;
+esac
+exit
+fi
+
+echo "========================================================================="
+echo "$website current ENABLE wp-cron.php !"
+echo "-------------------------------------------------------------------------"
+read -r -p "Do you want to DISABLE it ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    		echo "-------------------------------------------------------------------------"
+		echo "Please wait..."
+
+		sleep 1
+sed -i "/.*require_once(ABSPATH.*/adefine('DISABLE_WP_CRON', 'true');" /home/$website/public_html/wp-config.php
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service php-fpm restart
+else
+systemctl restart php-fpm.service
+fi
+clear
+echo "========================================================================="
+	echo "DISABLE wp-cron.php for $website successfully !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+       ;;
+    *)
+    clear
+    echo "========================================================================="
+   echo "Cancel !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+        ;;
+esac
+exit
+fi

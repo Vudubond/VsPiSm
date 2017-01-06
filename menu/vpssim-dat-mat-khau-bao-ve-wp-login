@@ -1,0 +1,462 @@
+#!/bin/sh
+. /etc/vpssim/pwprotect.default
+if [ ! -d /etc/nginx/pwprotect ]; then
+mkdir -p /etc/nginx/pwprotect
+fi
+if [ ! -f /etc/nginx/.htpasswd ]; then
+clear
+echo "========================================================================="
+echo "You must create default User & password before using this function. "
+echo "-------------------------------------------------------------------------"
+echo "Create it by: VPSSIM Menu => Default User & Password."
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+echo "========================================================================="
+echo "Use this function to ON/OFF protection wp-login.php for WP Website"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the website [ENTER]: " 
+read website
+website=`echo $website | tr '[A-Z]' '[a-z]'`
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "Website can not be empty."
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a domain name"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "Can not discovery $website in system !"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ ! -f /home/$website/public_html/wp-config.php ]; then
+clear
+echo "========================================================================="
+echo "$website maybe not a wordpress website or did not install wordpress code!"
+echo "-------------------------------------------------------------------------"
+echo "Please install wordpress code first or type in other website"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi  
+echo "$website" > /tmp/websitemk.txt
+sed -i '  s/\./_/g' /tmp/websitemk.txt
+sed -i 's/\-/_/g' /tmp/websitemk.txt
+username=`cat /tmp/websitemk.txt | sed "s/\_//" | sed "s/\_//" | sed "s/\_//" | sed "s/\_//" | cut -c1-30`
+####################################################################################
+if [ -f /etc/nginx/pwprotect/$website/wp_login.conf ]; then
+ if [  "$(grep "/etc/nginx/.htpasswd" /etc/nginx/pwprotect/$website/wp_login.conf)" == "" ]; then
+prompt="Type in your choice: "
+options=( "Change Username & Password" "Protect wp-login.php With Default Info" "Disable Protect wp-login.php" "Exit")
+echo "========================================================================="
+echo "wp-login.php of $website has protected "
+echo "========================================================================="
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+
+    case "$REPLY" in
+    1) chooseacction="thaymktruycap"; break;;
+    2) chooseacction="sudungmkmacdinh"; break;;
+    3) chooseacction="tatmatkhautruycap"; break;;
+    4) chooseacction="cancel"; break;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+###################################
+#Thay Mat Khau Truy Cap
+###################################
+if [ "$chooseacction" = "thaymktruycap" ]; then
+echo "-------------------------------------------------------------------------"
+echo -n "Type in username [ENTER]: " 
+read username
+if [ "$username" = "" ]; then
+clear
+echo "========================================================================="
+echo "Username can not empty"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the password [ENTER]:  "
+read matkhau
+if [ "$matkhau" = "" ]; then
+clear
+echo "========================================================================="
+echo "Password can not be empty"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+checkpass="^[a-zA-Z0-9_][-a-zA-Z0-9_]{0,61}[a-zA-Z0-9_]$";
+if [[ ! "$matkhau" =~ $checkpass ]]; then
+clear
+echo "========================================================================="
+echo "You must use only numbers, letters to set password !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo "Username and Password you typed in: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $username | Password: $matkhau"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will change old login info to this new login infomation "
+echo "-------------------------------------------------------------------------"
+echo "please wait ...."
+sleep 1
+rm -rf /etc/nginx/pwprotect/$website/.htpasswd_wp_login
+htpasswd.py -c -b /etc/nginx/pwprotect/$website/.htpasswd_wp_login $username $matkhau
+chmod -R 644 /etc/nginx/pwprotect/$website/.htpasswd_wp_login
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+else
+systemctl restart nginx.service
+fi
+clear
+echo "========================================================================="
+echo "Change Username and Password protection wp-login.php finished"
+echo "-------------------------------------------------------------------------"
+echo "Login infomation: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $username | Password: $matkhau"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+###################################
+#Protect Folder With Default Login Info
+###################################
+elif [ "$chooseacction" = "sudungmkmacdinh" ]; then
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to use default login info ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+sleep 1
+sed -i 's/.*htpasswd.*/auth_basic_user_file\ \/etc\/nginx\/.htpasswd;/g' /etc/nginx/pwprotect/$website/wp_login.conf
+rm -rf /etc/nginx/pwprotect/$website/.htpasswd_wp_login
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+else
+systemctl restart nginx.service
+fi
+clear
+echo "========================================================================= "
+echo "Config protection wp-login.php of $website finished"
+echo "-------------------------------------------------------------------------"
+echo "Login infomation: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+;;
+esac
+clear
+echo "========================================================================= "
+echo "Cancel"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+###################################
+#tatmatkhautruycap
+###################################
+elif [ "$chooseacction" = "tatmatkhautruycap" ]; then
+echo "-------------------------------------------------------------------------"
+read -r -p "Disable protection wp-login.php of $website ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+sleep 1
+cat > "/tmp/abcdfrfrf.sh" <<END
+#!/bin/sh
+sed -i '/wp_login.conf/d' /etc/nginx/conf.d/$website.conf 
+END
+chmod +x /tmp/abcdfrfrf.sh
+/tmp/abcdfrfrf.sh
+rm -f /tmp/abcdfrfrf.sh
+rm -rf /etc/nginx/pwprotect/$website/wp_login.conf
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+else
+systemctl restart nginx.service
+fi
+clear
+echo "========================================================================= "
+echo "Disable protection wp-login.php of $website finished"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+;;
+esac
+clear
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+else 
+clear && /etc/vpssim/menu/vpssim-wordpress-tools-menu
+fi
+fi
+fi
+#####################################################################################
+
+if [ -f /etc/nginx/pwprotect/$website/wp_login.conf ]; then
+ if [ ! "$(grep "/etc/nginx/.htpasswd" /etc/nginx/pwprotect/$website/wp_login.conf)" == "" ]; then
+prompt="Type in your choice: "
+options=( "Create New Username And Password" "Disable protection wp-login.php" "Exit")
+echo "========================================================================="
+echo "wp-login.php of $website has protected with default login info"
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+echo "========================================================================="
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+
+    case "$REPLY" in
+    1) chooseacction="thaymktruycap"; break;;
+    2) chooseacction="tatmatkhautruycap"; break;;
+    3) chooseacction="cancel"; break;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+###################################
+#Thay Mat Khau Truy Cap
+###################################
+if [ "$chooseacction" = "thaymktruycap" ]; then
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the Username [ENTER]: " 
+read username
+if [ "$username" = "" ]; then
+clear
+echo "========================================================================="
+echo "Username can not be empty"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the password [ENTER]:  "
+read matkhau
+if [ "$matkhau" = "" ]; then
+clear
+echo "========================================================================="
+echo "Password can not be empty"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+checkpass="^[a-zA-Z0-9_][-a-zA-Z0-9_]{0,61}[a-zA-Z0-9_]$";
+if [[ ! "$matkhau" =~ $checkpass ]]; then
+clear
+echo "========================================================================="
+echo "You must use only numbers, letters to set password !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo "Username and Password you typed in: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $username | Password: $matkhau"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will change old login info to this new login infomation "
+echo "-------------------------------------------------------------------------"
+echo "please wait ...."
+sleep 1
+#
+
+if [ ! -d /etc/nginx/pwprotect/$website ]; then
+mkdir -p /etc/nginx/pwprotect/$website
+fi
+
+rm -rf /etc/nginx/pwprotect/$website/.htpasswd_wp_login
+htpasswd.py -c -b /etc/nginx/pwprotect/$website/.htpasswd_wp_login $username $matkhau
+chmod -R 644 /etc/nginx/pwprotect/$website/.htpasswd_wp_login
+cat > "/tmp/abcdfrfrf.sh" <<END
+#!/bin/sh
+sed -i 's/.*htpasswd.*/auth_basic_user_file\ \/etc\/nginx\/pwprotect\/$website\/.htpasswd_wp_login;/g' /etc/nginx/pwprotect/$website/wp_login.conf 
+END
+chmod +x /tmp/abcdfrfrf.sh
+/tmp/abcdfrfrf.sh
+rm -f /tmp/abcdfrfrf.sh
+
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+else
+systemctl restart nginx.service
+fi
+clear
+echo "========================================================================="
+echo "Change Username and Password protect wp-login.php of $website finished"
+echo "-------------------------------------------------------------------------"
+echo "Login infomation: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $username | Password: $matkhau"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+###################################
+#tatmatkhautruycap
+###################################
+elif [ "$chooseacction" = "tatmatkhautruycap" ]; then
+echo "-------------------------------------------------------------------------"
+read -r -p "Disable protect wp-login.php of $website  ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+sleep 1
+cat > "/tmp/abcdfrfrf.sh" <<END
+#!/bin/sh
+sed -i '/wp_login.conf/d' /etc/nginx/conf.d/$website.conf
+sed -i '/Protect-Wp-login.php/d' /etc/nginx/conf.d/$website.conf
+ 
+END
+chmod +x /tmp/abcdfrfrf.sh
+/tmp/abcdfrfrf.sh
+rm -f /tmp/abcdfrfrf.sh
+rm -rf /etc/nginx/pwprotect/$website/wp_login.conf
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+else
+systemctl restart nginx.service
+fi
+clear
+echo "========================================================================= "
+echo "Disable protection wp-login.php of $website finished"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+;;
+esac
+clear
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+else 
+clear && /etc/vpssim/menu/vpssim-wordpress-tools-menu
+fi
+fi
+fi
+###############################################################################################
+prompt="Type in your choice: "
+echo "========================================================================="
+echo "Choose default Username and Password or Create New One"
+echo "========================================================================="
+options=( "Protect With Default Login Info" "Create New Username & Password" )
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+    case "$REPLY" in
+    1) chooseacction="dungmacdinh"; break;;
+    2) chooseacction="dungthongtinmoi"; break;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+###################################
+#dungthongtinmoi
+###################################
+if [ "$chooseacction" = "dungmacdinh" ]; then
+
+if [ ! -d /etc/nginx/pwprotect/$website ]; then
+mkdir -p /etc/nginx/pwprotect/$website
+fi
+
+cat > "/etc/nginx/pwprotect/$website/wp_login.conf" <<END
+    location ~ ^/(wp-login\\.php) {
+		include /etc/nginx/fastcgi_params;
+		fastcgi_pass 127.0.0.1:9000;
+		fastcgi_param SCRIPT_FILENAME /home/$website/public_html\$fastcgi_script_name;
+		auth_basic "Authorization Required";
+		auth_basic_user_file  /etc/nginx/.htpasswd;
+	}
+END
+	
+if [ "$(grep Protect-Wp-login.php /etc/nginx/conf.d/$website.conf)" == "" ]; then
+sed -i "/.*block.conf*./a\#Config\ to\ Protect-Wp-login.php" /etc/nginx/conf.d/$website.conf
+sed -i "s/.*Protect-Wp-login.php*./\n&/" /etc/nginx/conf.d/$website.conf
+fi
+sed -i "/.*Protect-Wp-login.php*./ainclude \/etc\/nginx\/pwprotect\/$website\/wp_login.conf;" /etc/nginx/conf.d/$website.conf
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+else
+systemctl restart nginx.service
+fi
+clear
+echo "========================================================================="
+echo "Config to use default login info to protect wp-login.php finished"
+echo "-------------------------------------------------------------------------"
+echo "Login infomation: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+
+else 
+echo "-------------------------------------------------------------------------"
+echo "Username: $username"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the password [ENTER]:  "
+read matkhau
+if [ "$matkhau" = "" ]; then
+clear
+echo "========================================================================="
+echo "Password can not be empty"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+
+if [[ ! ${#matkhau} -ge 6 ]]; then
+clear
+echo "========================================================================="
+echo "The password must be at least 6 characters long."
+echo "-------------------------------------------------------------------------"
+echo "Please try again  !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+checkpass="^[a-zA-Z0-9_][-a-zA-Z0-9_]{0,61}[a-zA-Z0-9_]$";
+if [[ ! "$matkhau" =~ $checkpass ]]; then
+clear
+echo "========================================================================="
+echo "You must use only numbers, letters to set password !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+
+echo "-------------------------------------------------------------------------"
+echo "Please wait ...."
+sleep 1
+if [ ! -d /etc/nginx/pwprotect/$website ]; then
+mkdir -p /etc/nginx/pwprotect/$website
+fi
+rm -rf /etc/nginx/pwprotect/$website/.htpasswd_wp_login
+htpasswd.py -c -b /etc/nginx/pwprotect/$website/.htpasswd_wp_login $username $matkhau
+chmod -R 644 /etc/nginx/pwprotect/$website/.htpasswd_wp_login
+
+cat > "/etc/nginx/pwprotect/$website/wp_login.conf" <<END
+    location ~ ^/(wp-login\\.php) {
+		include /etc/nginx/fastcgi_params;
+		fastcgi_pass 127.0.0.1:9000;
+		fastcgi_param SCRIPT_FILENAME /home/$website/public_html\$fastcgi_script_name;
+		auth_basic "Authorization Required";
+		auth_basic_user_file  /etc/nginx/pwprotect/$website/.htpasswd_wp_login;
+	}
+END
+	
+if [ "$(grep Protect-Wp-login.php /etc/nginx/conf.d/$website.conf)" == "" ]; then
+sed -i "/.*block.conf*./a\#Config\ to\ Protect-Wp-login.php" /etc/nginx/conf.d/$website.conf
+sed -i "s/.*Protect-Wp-login.php*./\n&/" /etc/nginx/conf.d/$website.conf
+fi
+sed -i "/.*Protect-Wp-login.php*./ainclude \/etc\/nginx\/pwprotect\/$website\/wp_login.conf;" /etc/nginx/conf.d/$website.conf
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+else
+systemctl restart nginx.service
+fi
+clear
+echo "========================================================================="
+echo "Created password protection wp-login.php of $website finished"
+echo "-------------------------------------------------------------------------"
+echo "Login infomation: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $username | Password: $matkhau"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi

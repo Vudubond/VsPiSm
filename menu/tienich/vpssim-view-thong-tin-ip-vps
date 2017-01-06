@@ -1,0 +1,82 @@
+#!/bin/sh
+. /home/vpssim.conf
+
+echo "========================================================================="
+echo "Use this function to view Server's detail infomation. The info you can"
+echo "-------------------------------------------------------------------------"
+echo "view: Server location, Disc, RAM, CPU, Virtualization Technology .... "
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to view server's detail info  ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait ...";sleep 1
+randomcode=`date |md5sum |cut -c '1-14'`
+rm -rf /home/$mainsite/private_html/servervpsinfo*
+curl -ss ipinfo.io > /etc/vpssim/ipvpsinfo.txt
+sed -i 's/,//g' /etc/vpssim/ipvpsinfo.txt
+sed -i 's/"//g' /etc/vpssim/ipvpsinfo.txt
+echo "=========================================================================================" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "CHECK SERVER INFOMATION BY VPSSIM" > /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "=========================================================================================" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "=========================================================================================" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "IP INFOMATION" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "=========================================================================================" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "IP Server: $serverip" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "Host name: $(cat /etc/vpssim/ipvpsinfo.txt | grep hostname | awk '{print $2,$3,$4,$5,$6}')" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "City: $(cat /etc/vpssim/ipvpsinfo.txt | grep city | awk '{print $2,$3,$4,$5,$6}')" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "Region: $(cat /etc/vpssim/ipvpsinfo.txt | grep region | awk '{print $2,$3,$4,$5,$6}')" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "Country: $(cat /etc/vpssim/ipvpsinfo.txt | grep country | awk '{print $2,$3,$4,$5,$6}')" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "Latitude/Longitude: $(cat /etc/vpssim/ipvpsinfo.txt | grep log | awk '{print $2,$3,$4,$5,$6}')" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "Network: $(cat /etc/vpssim/ipvpsinfo.txt | grep org | awk '{print $2,$3,$4,$5,$6}')" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+
+###################
+echo "" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "=========================================================================================" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "BASIC INFOMATION" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "=========================================================================================" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+tencpu=$(cat /proc/cpuinfo|grep name|head -1|awk '{ $1=$2=$3=""; print }')
+soloi=$(cat /proc/cpuinfo|grep MHz|wc -l)
+tocdo=$(cat /proc/cpuinfo|grep MHz|head -1|awk '{ print $4 }')
+ramsize=$(free -m | awk 'NR==2'|awk '{ print $2 }')
+swapserver=$(free -m | awk 'NR==4'| awk '{ print $2 }')
+tocdohdd=$( (dd if=/dev/zero of=test_$$ bs=64k count=16k conv=fdatasync && rm -f test_$$) 2>&1 | tail -1| awk '{ print $(NF-1) $NF }')
+echo "VPS Type : $(virt-what)" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "CPU type : $tencpu"  >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "Number of cores : $soloi"  >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "CPU frequency : $tocdo MHz"  >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "RAM : $ramsize MB"  >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "Swap : $swapserver MB"  >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "I/O speed : $tocdohdd"  >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+##########################
+echo "=========================================================================================" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "DISC INFOMATION" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "=========================================================================================" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+df -h >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+#####
+##################
+echo "" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "=========================================================================================" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "CPU DETAIL INFOMATION" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "=========================================================================================" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+cat /proc/cpuinfo >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+echo "=================================== The End =============================================" >> /home/$mainsite/private_html/servervpsinfo-$randomcode.txt
+rm -rf /etc/vpssim/ipvpsinfo.txt
+
+clear
+echo "========================================================================="
+echo "Link View Server Infomation:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/servervpsinfo-$randomcode.txt"
+/etc/vpssim/menu/vpssim-tien-ich
+        ;;
+    *)
+       clear
+/etc/vpssim/menu/vpssim-tien-ich
+        ;;
+esac

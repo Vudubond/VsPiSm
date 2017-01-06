@@ -1,0 +1,30 @@
+#!/bin/sh
+. /home/vpssim.conf
+echo "========================================================================= "
+echo "Use this function to remove BitTorrent Sync from server"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to remove BTsync ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+echo "Prepare to Remove BTsync ... "
+sleep 1
+killall -q btsync
+pkill btsync
+iptables -I INPUT -p tcp --dport $(grep btport /etc/vpssim/btsync.info | awk 'NR==1 {print $3}') -j DROP
+rm -rf /usr/bin/btsync
+rm -rf /etc/vpssim/btsync.info
+rm -rf /etc/btsync-vpssim
+sed -i "/\b\(btsync\)\b/d" /etc/rc.d/rc.local
+;;
+    *)
+       clear 
+echo "========================================================================= "
+echo "Cancel remove BTsync "
+/etc/vpssim/menu/vpssim-bitsync-menu
+        ;;
+esac
+clear 
+echo "========================================================================= "
+echo "Remove BitTorrent Sync completed"
+/etc/vpssim/menu/vpssim-bitsync-menu

@@ -1,0 +1,491 @@
+#!/bin/sh
+. /etc/vpssim/pwprotect.default
+if [ ! -d /etc/nginx/pwprotect ]; then
+mkdir -p /etc/nginx/pwprotect
+fi
+if [ ! -f /etc/nginx/.htpasswd ]; then
+clear
+echo "========================================================================="
+echo "You must create default User & password before using this function. "
+echo "-------------------------------------------------------------------------"
+echo "Create it by: VPSSIM Menu => Default User & Password."
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+echo "========================================================================="
+echo "Use this function to Enable/Disable protection folder for website."
+echo "-------------------------------------------------------------------------"
+echo "Step I: Type in Website => Step II: Type in Folder => Create new username"
+echo "-------------------------------------------------------------------------"
+echo "and password or choose using default Username & Password."
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the website [ENTER]: " 
+read website
+website=`echo $website | tr '[A-Z]' '[a-z]'`
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "You did not typed in the website"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "Can not discover $website on server "
+/etc/vpssim/menu/vpssim-tien-ich
+fi   
+
+echo "$website" > /tmp/websitemk.txt
+sed -i '  s/\./_/g' /tmp/websitemk.txt
+sed -i 's/\-/_/g' /tmp/websitemk.txt
+username=`cat /tmp/websitemk.txt | sed "s/\_//" | sed "s/\_//" | sed "s/\_//" | sed "s/\_//" | cut -c1-30`
+echo "-------------------------------------------------------------------------"
+echo -n "Type in folder you want to protect: "
+read foldermk
+foldermk=`echo $foldermk | sed 's/\///' | sed 's/\///' | sed 's/\///' | sed 's/\///'`
+if [ ! -d /home/$website/public_html/$foldermk ]; then
+clear
+echo "========================================================================="
+echo "Can not discover folder $foldermk of $website"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+
+if [ -f /home/$website/public_html/wp-config.php ]; then
+if [ "$foldermk" == "wp-admin" ]; then
+clear
+echo "========================================================================="
+echo "$website is wordpress website "
+echo "-------------------------------------------------------------------------"
+echo "You must use Wordpress Blog Tools to protect WP-ADMIN folder"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+fi
+
+if [ -f /etc/vpssim/net2ftpsite.info ]; then
+net2ftpsite=$(cat /etc/vpssim/net2ftpsite.info)
+if [ "$website" = "$net2ftpsite" ]; then
+if [ "$foldermk" == "temp" ]; then
+clear
+echo "========================================================================="
+echo "$website is Net2FTP domain"
+echo "-------------------------------------------------------------------------"
+echo "You can not do this config."
+/etc/vpssim/menu/vpssim-tien-ich
+fi
+fi
+fi
+
+#####################################################################################
+
+if [ -f /etc/nginx/pwprotect/$website/$foldermk.conf ]; then
+ if [  "$(grep "/etc/nginx/.htpasswd" /etc/nginx/pwprotect/$website/$foldermk.conf)" == "" ]; then
+prompt="Type in your choice: "
+options=( "Change Password protection" "Protect Folder With Default Login Info" "Disable Password protection" "Exit")
+echo "========================================================================="
+echo "Folder $foldermk Has Protected "
+echo "========================================================================="
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+
+    case "$REPLY" in
+    1) chooseacction="thaymktruycap"; break;;
+    2) chooseacction="sudungmkmacdinh"; break;;
+    3) chooseacction="tatmatkhautruycap"; break;;
+    4) chooseacction="cancel"; break;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+###################################
+#Thay Mat Khau Truy Cap
+###################################
+if [ "$chooseacction" = "thaymktruycap" ]; then
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the Username [ENTER]: " 
+read username
+if [ "$username" = "" ]; then
+clear
+echo "========================================================================="
+echo "Username can not be empty"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+checkpass="^[a-zA-Z0-9_][-a-zA-Z0-9_]{0,61}[a-zA-Z0-9_]$";
+if [[ ! "$username" =~ $checkpass ]]; then
+clear
+echo "========================================================================="
+echo "You must use only numbers, letters to set Username !"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the password [ENTER]:  "
+read matkhau
+if [ "$matkhau" = "" ]; then
+clear
+echo "========================================================================="
+echo "Password can not be empty"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+checkpass="^[a-zA-Z0-9_][-a-zA-Z0-9_]{0,61}[a-zA-Z0-9_]$";
+if [[ ! "$matkhau" =~ $checkpass ]]; then
+clear
+echo "========================================================================="
+echo "You must use only numbers, letters to set password !"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo "Username and password you typed in: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $username | Password: $matkhau"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will change old login info to this new login infomation "
+echo "-------------------------------------------------------------------------"
+echo "please wait ...."
+sleep 1
+
+
+
+rm -rf /etc/nginx/pwprotect/$website/.htpasswd_$foldermk
+htpasswd.py -c -b /etc/nginx/pwprotect/$website/.htpasswd_$foldermk $username $matkhau
+chmod -R 644 /etc/nginx/pwprotect/$website/.htpasswd_$foldermk
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else
+systemctl reload nginx
+fi
+clear
+echo "========================================================================="
+echo "Change Username and Password to protect $foldermk finished"
+echo "-------------------------------------------------------------------------"
+echo "Username: $username | Password: $matkhau"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+###################################
+#Protect Folder With Default Login Info
+###################################
+elif [ "$chooseacction" = "sudungmkmacdinh" ]; then
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to use default info to protect $foldermk ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+sleep 1
+sed -i 's/.*htpasswd.*/auth_basic_user_file\ \/etc\/nginx\/.htpasswd;/g' /etc/nginx/pwprotect/$website/$foldermk.conf
+rm -rf /etc/nginx/pwprotect/$website/.htpasswd_$foldermk
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else
+systemctl reload nginx
+fi
+clear
+echo "========================================================================= "
+echo "Config protection folder $foldermk with default info finished"
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+/etc/vpssim/menu/vpssim-tien-ich
+;;
+esac
+clear
+echo "========================================================================= "
+echo "Cancel"
+/etc/vpssim/menu/vpssim-tien-ich
+###################################
+#tatmatkhautruycap
+###################################
+elif [ "$chooseacction" = "tatmatkhautruycap" ]; then
+echo "-------------------------------------------------------------------------"
+read -r -p "Disable protection folder $foldermk ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+sleep 1
+cat > "/tmp/abcdfrfrf.sh" <<END
+#!/bin/sh
+sed -i '/$foldermk.conf/d' /etc/nginx/conf.d/$website.conf 
+END
+chmod +x /tmp/abcdfrfrf.sh
+/tmp/abcdfrfrf.sh
+rm -f /tmp/abcdfrfrf.sh
+rm -rf /etc/nginx/pwprotect/$website/$foldermk.conf
+rm -rf /etc/nginx/pwprotect/$website/$foldermk
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else
+systemctl reload nginx
+fi
+clear
+echo "========================================================================= "
+echo "Disable protection Folder $foldermk finished"
+/etc/vpssim/menu/vpssim-tien-ich
+;;
+esac
+clear
+/etc/vpssim/menu/vpssim-tien-ich
+else 
+clear && /etc/vpssim/menu/vpssim-tien-ich
+fi
+fi
+fi
+#####################################################################################
+
+if [ -f /etc/nginx/pwprotect/$website/$foldermk.conf ]; then
+ if [ ! "$(grep "/etc/nginx/.htpasswd" /etc/nginx/pwprotect/$website/$foldermk.conf)" == "" ]; then
+prompt="Type in your choice: "
+options=( "Create New Username And Password" "Disable Protection Folder" "Exit")
+echo "========================================================================="
+echo "Folder $foldermk has protected with default Username And Password"
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+echo "========================================================================="
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+
+    case "$REPLY" in
+    1) chooseacction="thaymktruycap"; break;;
+    2) chooseacction="tatmatkhautruycap"; break;;
+    3) chooseacction="cancel"; break;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+###################################
+#Thay Mat Khau Truy Cap
+###################################
+if [ "$chooseacction" = "thaymktruycap" ]; then
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the Username [ENTER]: " 
+read username
+if [ "$username" = "" ]; then
+clear
+echo "========================================================================="
+echo "Username can not be empty"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+checkpass="^[a-zA-Z0-9_][-a-zA-Z0-9_]{0,61}[a-zA-Z0-9_]$";
+if [[ ! "$username" =~ $checkpass ]]; then
+clear
+echo "========================================================================="
+echo "You must use only numbers, letters to set Username !"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the password [ENTER]:  "
+read matkhau
+if [ "$matkhau" = "" ]; then
+clear
+echo "========================================================================="
+echo "Password can not be empty"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+checkpass="^[a-zA-Z0-9_][-a-zA-Z0-9_]{0,61}[a-zA-Z0-9_]$";
+if [[ ! "$matkhau" =~ $checkpass ]]; then
+clear
+echo "========================================================================="
+echo "You must use only numbers, letters to set password !"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo "Username and password you typed in: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $username | Password: $matkhau"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will change old login info to this new login infomation "
+echo "-------------------------------------------------------------------------"
+echo "please wait ...."
+sleep 1
+#
+
+if [ ! -d /etc/nginx/pwprotect/$website ]; then
+mkdir -p /etc/nginx/pwprotect/$website
+fi
+
+rm -rf /etc/nginx/pwprotect/$website/.htpasswd_$foldermk
+htpasswd.py -c -b /etc/nginx/pwprotect/$website/.htpasswd_$foldermk $username $matkhau
+chmod -R 644 /etc/nginx/pwprotect/$website/.htpasswd_$foldermk
+cat > "/tmp/abcdfrfrf.sh" <<END
+#!/bin/sh
+sed -i 's/.*htpasswd.*/auth_basic_user_file\ \/etc\/nginx\/pwprotect\/$website\/.htpasswd_$foldermk;/g' /etc/nginx/pwprotect/$website/$foldermk.conf 
+END
+chmod +x /tmp/abcdfrfrf.sh
+/tmp/abcdfrfrf.sh
+rm -f /tmp/abcdfrfrf.sh
+
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else
+systemctl reload nginx
+fi
+clear
+echo "========================================================================="
+echo "Changed Username & Password for $foldermk finished"
+echo "-------------------------------------------------------------------------"
+echo "Username: $username | Password: $matkhau"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+###################################
+#tatmatkhautruycap
+###################################
+elif [ "$chooseacction" = "tatmatkhautruycap" ]; then
+echo "-------------------------------------------------------------------------"
+read -r -p "Disable protect folder $foldermk ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+sleep 1
+cat > "/tmp/abcdfrfrf.sh" <<END
+#!/bin/sh
+sed -i '/$foldermk.conf/d' /etc/nginx/conf.d/$website.conf 
+END
+chmod +x /tmp/abcdfrfrf.sh
+/tmp/abcdfrfrf.sh
+rm -f /tmp/abcdfrfrf.sh
+rm -rf /etc/nginx/pwprotect/$website/$foldermk.conf
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else
+systemctl reload nginx
+fi
+clear
+echo "========================================================================= "
+echo "Disable protection folder $foldermk finished"
+/etc/vpssim/menu/vpssim-tien-ich
+;;
+esac
+clear
+/etc/vpssim/menu/vpssim-tien-ich
+else 
+clear && /etc/vpssim/menu/vpssim-tien-ich
+fi
+fi
+fi
+###############################################################################################
+prompt="Type in your choice: "
+echo "========================================================================="
+echo "Choose Username and Password to protect $foldermk"
+echo "========================================================================="
+options=( "Protect Folder With Default Login Info" "Create New Username & Password" )
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+    case "$REPLY" in
+    1) chooseacction="dungmacdinh"; break;;
+    2) chooseacction="dungthongtinmoi"; break;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+###################################
+#dungthongtinmoi
+###################################
+if [ "$chooseacction" = "dungmacdinh" ]; then
+
+if [ ! -d /etc/nginx/pwprotect/$website ]; then
+mkdir -p /etc/nginx/pwprotect/$website
+fi
+
+cat > "/etc/nginx/pwprotect/$website/$foldermk.conf" <<END
+    location /$foldermk {
+		auth_basic "Authorization Required";
+		auth_basic_user_file  /etc/nginx/.htpasswd;
+		# PHP Handler
+	}
+END
+
+if [ "$(grep Protect-Folders /etc/nginx/conf.d/$website.conf)" == "" ]; then
+sed -i "/.*block.conf*./a\#Config\ to\ Protect-Folders" /etc/nginx/conf.d/$website.conf
+sed -i "s/.*Protect-Folders*./\n&/" /etc/nginx/conf.d/$website.conf
+fi
+sed -i "/.*Protect-Folders*./ainclude \/etc\/nginx\/pwprotect\/$website\/$foldermk.conf;" /etc/nginx/conf.d/$website.conf
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else
+systemctl reload nginx
+fi
+clear
+echo "========================================================================="
+echo "Config to use default login info to protect $foldermk finished"
+echo "-------------------------------------------------------------------------"
+echo "Login infomation: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+/etc/vpssim/menu/vpssim-tien-ich
+
+else 
+echo "-------------------------------------------------------------------------"
+echo "Username: $username"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the password [ENTER]:  "
+read matkhau
+if [ "$matkhau" = "" ]; then
+clear
+echo "========================================================================="
+echo "Password can not be empty"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+checkpass="^[a-zA-Z0-9_][-a-zA-Z0-9_]{0,61}[a-zA-Z0-9_]$";
+if [[ ! "$matkhau" =~ $checkpass ]]; then
+clear
+echo "========================================================================="
+echo "You must use only numbers, letters to set password !"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+if [[ ! ${#matkhau} -ge 6 ]]; then
+clear
+echo "========================================================================="
+echo "The Password must be at least 6 characters long ."
+echo "-------------------------------------------------------------------------"
+echo "Please try again  !"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+
+echo "-------------------------------------------------------------------------"
+echo "Please wait ...."
+sleep 1
+if [ ! -d /etc/nginx/pwprotect/$website ]; then
+mkdir -p /etc/nginx/pwprotect/$website
+fi
+rm -rf /etc/nginx/pwprotect/$website/.htpasswd_$foldermk
+htpasswd.py -c -b /etc/nginx/pwprotect/$website/.htpasswd_$foldermk $username $matkhau
+chmod -R 644 /etc/nginx/pwprotect/$website/.htpasswd_$foldermk
+
+cat > "/etc/nginx/pwprotect/$website/$foldermk.conf" <<END
+    location /$foldermk {
+		auth_basic "Authorization Required";
+		auth_basic_user_file  /etc/nginx/pwprotect/$website/.htpasswd_$foldermk;
+		# PHP Handler
+	}
+END
+
+if [ "$(grep Protect-Folders /etc/nginx/conf.d/$website.conf)" == "" ]; then
+sed -i "/.*block.conf*./a\#Config\ to\ Protect-Folders" /etc/nginx/conf.d/$website.conf
+sed -i "s/.*Protect-Folders*./\n&/" /etc/nginx/conf.d/$website.conf
+fi
+sed -i "/.*Protect-Folders*./ainclude \/etc\/nginx\/pwprotect\/$website\/$foldermk.conf;" /etc/nginx/conf.d/$website.conf
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else
+systemctl reload nginx
+fi
+clear
+echo "========================================================================="
+echo "Finished to protect folder $foldermk of $website "
+echo "-------------------------------------------------------------------------"
+echo "Login infomation: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $username | Password: $matkhau"
+/etc/vpssim/menu/vpssim-tien-ich
+
+exit
+fi

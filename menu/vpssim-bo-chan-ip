@@ -1,0 +1,47 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+
+
+if [ -f /etc/csf/csf.conf ]; then
+echo "========================================================================="
+echo "This function will enable CSF firewall if you are disabling it on VPS"
+echo "-------------------------------------------------------------------------" 
+echo -n "Type IP you want to unblock [ENTER]: " 
+read ipbochan
+if [ "$ipbochan" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please fill accurately"
+/etc/vpssim/menu/vpssim-kiem-tra-ddos
+exit
+fi
+csf -e
+csf -dr "$ipbochan"
+    csf -r
+clear
+echo "========================================================================="
+echo "IP $ipbochan now can access to Website or VPS"
+/etc/vpssim/menu/vpssim-kiem-tra-ddos
+fi
+clear
+
+echo "========================================================================= "
+echo "This funcion run with CSF Firewall"
+echo "CSF Firewall is not installed ! "
+read -r -p "Do you want to install CSF Firewall on this VPS [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+/etc/vpssim/menu/vpssim-cai-dat-csf-ddos
+clear
+echo "========================================================================= "
+echo "Successfully installed and configed CSF Firewall"
+/etc/vpssim/menu/vpssim-kiem-tra-ddos
+;;
+esac
+clear
+echo "========================================================================= "
+echo "You cancel install CSF Firewall ! "
+/etc/vpssim/menu/vpssim-kiem-tra-ddos
+exit
+fi

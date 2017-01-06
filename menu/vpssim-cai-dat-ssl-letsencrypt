@@ -1,0 +1,345 @@
+#!/bin/bash
+. /home/vpssim.conf
+
+# Rate limit on registrations per IP is currently 10 per 3 hours
+# Rate limit on certificates per Domain is currently 5 per 7 days
+
+if [ ! -d /etc/vpssim/Backup.Vhost.SSL ]; then
+mkdir -p /etc/vpssim/Backup.Vhost.SSL
+fi
+
+if [ ! -d /etc/vpssim/.tmp ]; then
+mkdir -p /etc/vpssim/.tmp
+fi
+
+echo "========================================================================="
+echo "Use this function to setup SSL using certificates by Let's Encrypt."
+#echo "-------------------------------------------------------------------------"
+#echo "Xem huong dan tai: https://hostingaz.vn/go/letencrypt"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the domain [ENTER]: " 
+read website
+website=`echo $website | tr '[A-Z]' '[a-z]'`
+websiteTO=`echo $website | tr '[a-z]' '[A-Z]'`
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "The Domain name can not be empty"
+/etc/vpssim/menu/vpssim-letsencrypt-menu
+exit
+fi
+
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "Can not find $website in server "
+/etc/vpssim/menu/vpssim-letsencrypt-menu
+exit
+fi  
+
+if [ ! -d /home/$website/public_html ]; then
+clear
+echo "========================================================================="
+echo "Can not find folder public_html of $website"
+echo "-------------------------------------------------------------------------"
+echo "You can not using this function."
+/etc/vpssim/menu/vpssim-letsencrypt-menu
+exit
+fi
+##############
+if [ -f /root/.acme.sh/$website/$website.conf ]; then
+
+echo "Check $website when Setup SSL" > /home/$website/public_html/vpssim.check
+checkurlsttSSL=$(curl -o /dev/null --silent --head --write-out '%{http_code}' "https://$website/vpssim.check")
+checkurlstt=$(curl -o /dev/null --silent --head --write-out '%{http_code}' "http://$website/vpssim.check")
+rm -rf /home/$website/public_html/vpssim.check
+if [[  "$checkurlsttSSL" == "200" ]]; then
+clear
+echo "========================================================================="
+echo "$websiteTO is using SSL by Let's Encrypt."
+/etc/vpssim/menu/vpssim-letsencrypt-menu
+exit
+fi
+if [[ "$checkurlstt" == "200" ]]; then
+
+yes | cp -rf  /etc/vpssim/Backup.Vhost.SSL/$website/$website.conf /home/$website/$website.conf_HTTP
+yes | cp -rf  /etc/vpssim/Backup.Vhost.SSL/$website/$website.conf_HTTPS /home/$website/$website.conf_HTTPS
+
+clear
+echo "========================================================================="
+echo "You have created certificate for $website but did not finish setup."
+echo "-------------------------------------------------------------------------"
+echo "You must to edit the Vhost file of $website follow:"
+echo "-------------------------------------------------------------------------"
+echo "File Vhost: /etc/nginx/conf.d/$website.conf"
+echo "-------------------------------------------------------------------------"
+echo "Backup Vhost: /home/$website/$website.conf_HTTP"
+echo "-------------------------------------------------------------------------"
+echo "SSL Vhost: /home/$website/$website.conf_HTTPS"
+/etc/vpssim/menu/vpssim-letsencrypt-menu
+exit
+fi
+fi
+
+################
+rm -rf /etc/vpssim/.tmp/servername
+grep "server_name\ $website" /etc/nginx/conf.d/$website.conf > /etc/vpssim/.tmp/servername
+servername=$(cat /etc/vpssim/.tmp/servername)
+
+if [ ! -n /etc/vpssim/.tmp/servername ]; then
+clear
+echo "========================================================================="
+echo "You have changed the vhost file of $website !"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM can not setup SSL for $website."
+/etc/vpssim/menu/vpssim-letsencrypt-menu
+exit
+fi
+
+if [ "`grep "block.conf;" /etc/nginx/conf.d/$website.conf`" = "" ]; then
+clear
+echo "========================================================================="
+echo "You have changed the vhost file of $website !"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM can not setup SSL for $website."
+/etc/vpssim/menu/vpssim-letsencrypt-menu
+exit
+fi
+
+echo "========================================================================="
+echo "Discovered $website in system."
+echo "-------------------------------------------------------------------------"
+echo "If the domain ENABLED cloudflare or do not point to server's IP"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM can not setup SSL for $websiteTO."
+echo "========================================================================="
+echo "========================================================================="
+echo ""
+sleep 7
+echo "Checking DNS of domain ..."; sleep 3
+echo "Check $website when Setup SSL" > /home/$website/public_html/vpssim.check
+checkurlstt=$(curl -o /dev/null --silent --head --write-out '%{http_code}' "http://$website/vpssim.check")
+checkurlsttSSL=$(curl -o /dev/null --silent --head --write-out '%{http_code}' "https://$website/vpssim.check")
+rm -rf /home/$website/public_html/vpssim.check
+if [[  "$checkurlsttSSL" == "200" ]]; then
+clear
+echo "========================================================================="
+echo "You are using normal SSL for $website."
+echo "-------------------------------------------------------------------------"
+echo "Current VPSSIM do not support convert normal SLL to Let's Encrypt SSL."
+/etc/vpssim/menu/vpssim-letsencrypt-menu
+exit
+fi
+if [[ ! "$checkurlstt" == "200" ]]; then
+clear
+echo "========================================================================="
+echo "You must point $website to $serverip before run this function."
+/etc/vpssim/menu/vpssim-letsencrypt-menu
+exit
+fi
+
+
+echo "$websiteTO has pointed to $serverip. => [ OK ]"
+echo ""
+
+echo "Check Domain ENABLE cloudflare (Hide IP Address) or NOT ? ..."; sleep 3
+
+
+rm -rf /etc/vpssim/.tmp/cloudflare.status
+curl -I -s $website > /etc/vpssim/.tmp/cloudflare.status
+status_cloudflare=`grep cloudflare-nginx /etc/vpssim/.tmp/cloudflare.status`
+rm -rf /etc/vpssim/.tmp/cloudflare.status
+if [ ! "$status_cloudflare" = "" ]; then
+clear
+echo "========================================================================="
+echo "$website is ENABLED CloudFlare"
+echo "-------------------------------------------------------------------------"
+echo "You must DISABLE CloudFlare before using this function."
+/etc/vpssim/menu/vpssim-letsencrypt-menu
+exit
+fi
+echo "$websiteTO do not ENABLED Cloudflare. => [ OK ]"
+echo ""
+echo "========================================================================="
+echo "========================================================================="
+  read -r -p "You want to setup SSL for $websiteTO [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+echo "VPSSIM start installing Let's Encrypt ..."
+sleep 3
+
+if [ ! -d /home/$website/public_html/.well-known/acme-challenge ]; then
+mkdir -p /home/$website/public_html/.well-known
+mkdir -p /home/$website/public_html/.well-known/acme-challenge
+fi
+
+rm -rf /etc/vpssim/.tmp/config.ssl.$website.txt
+cat > "/etc/vpssim/.tmp/config.ssl.$website.txt" <<END
+
+# Config for Free SSL (LetEncrypt) - Do not Delete !
+location ~ /.well-known {
+        allow all;
+        root /home/$website/public_html;
+    }
+END
+
+cd /etc/vpssim/.tmp
+if [ "`grep "location\ ~\ /.well-known\ {" /etc/nginx/conf.d/$website.conf`" == "" ]; then
+sed -i "/block.conf;/r config.ssl.${website}.txt" /etc/nginx/conf.d/$website.conf
+fi
+cd
+
+service nginx restart
+
+echo "Check $website when Setup SSL" > /home/$website/public_html/.well-known/acme-challenge/vpssim.check
+checkurlstt=$(curl -o /dev/null --silent --head --write-out '%{http_code}' "http://$website/.well-known/acme-challenge/vpssim.check")
+rm -rf /home/$website/public_html/.well-known/acme-challenge/vpssim.check
+if [[ ! "$checkurlstt" == "200" ]]; then
+clear
+echo "========================================================================="
+echo "The install SSL process for $website failed."
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM can not run this function."
+/etc/vpssim/menu/vpssim-letsencrypt-menu
+exit
+fi
+mkdir -p /etc/nginx/auth-acme
+mkdir -p /etc/nginx/auth-acme/$website
+/root/.acme.sh/acme.sh --issue -d $website -w /home/$website/public_html
+/root/.acme.sh/acme.sh --installcert -d $website --keypath  /etc/nginx/auth-acme/$website/$website.key --capath  /etc/nginx/auth-acme/$website/$website.ca --fullchainpath  /etc/nginx/auth-acme/$website/$website.crt --reloadcmd "service nginx reload"
+sleep 5
+if [ ! -s /etc/nginx/auth-acme/$website/$website.crt ]; then
+rm -rf /etc/nginx/auth-acme/$website
+rm -rf /root/.acme.sh/$website
+clear
+echo "========================================================================="
+echo "The install SSL process for $website failed."
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM can not run this function."
+/etc/vpssim/menu/vpssim-letsencrypt-menu
+exit
+fi
+
+rm -rf /etc/vpssim/.tmp/$website.conf.txt
+cp -r /etc/nginx/conf.d/$website.conf /etc/vpssim/.tmp/$website.conf.txt
+
+# replace from 1 to server_name
+sed -i "1,/${servername}/d" /etc/vpssim/.tmp/$website.conf.txt
+# Tao vhost ssl
+rm -rf /etc/vpssim/.tmp/SSL-$website.conf.txt
+
+cat > "/etc/vpssim/.tmp/SSL-$website.conf.txt" <<END
+server {
+listen 80;
+server_name $website www.$website;
+rewrite ^(.*) https://$website\$1 permanent;
+}
+server {
+listen 443 ssl http2;
+ssl_certificate /etc/nginx/auth-acme/$website/$website.crt;
+ssl_certificate_key /etc/nginx/auth-acme/$website/$website.key;
+ssl_session_cache shared:SSL:10m;
+ssl_session_timeout 10m;
+ssl_prefer_server_ciphers on;
+include /etc/nginx/conf/ssl-protocol-cipher.conf;
+ssl_stapling on;
+ssl_stapling_verify on;
+resolver 8.8.8.8 8.8.4.4 valid=300s;
+resolver_timeout 30s;
+ssl_trusted_certificate /etc/nginx/auth-acme/$website/$website.ca;
+ssl_buffer_size 1400;
+ssl_session_tickets on;
+add_header Strict-Transport-Security max-age=31536000;
+access_log off;
+access_log   /home/$website/logs/access_log;
+error_log off;
+error_log /home/$website/logs/error.log;
+add_header X-Frame-Options SAMEORIGIN;
+add_header X-Content-Type-Options nosniff;
+add_header X-XSS-Protection "1; mode=block";
+root /home/$website/public_html;
+include /etc/nginx/conf/ddos2.conf;
+index index.php index.html index.htm;
+$servername
+END
+
+cd /etc/vpssim/.tmp/
+cat SSL-$website.conf.txt $website.conf.txt > $website.conf_HTTPS
+rm -rf /etc/vpssim/.tmp/SSL-$website.conf.txt
+rm -rf /etc/vpssim/.tmp/$website.conf.txt
+cd
+if [ ! -d /etc/vpssim/Backup.Vhost.SSL ]; then
+mkdir -p /etc/vpssim/Backup.Vhost.SSL
+fi
+mkdir -p /etc/vpssim/Backup.Vhost.SSL/$website
+#Backup Vhost.Conf
+yes | cp -rf  /etc/nginx/conf.d/$website.conf /etc/vpssim/Backup.Vhost.SSL/$website/$website.conf
+yes | cp -rf  /etc/vpssim/.tmp/$website.conf_HTTPS /etc/vpssim/Backup.Vhost.SSL/$website/$website.conf_HTTPS
+
+yes | cp -rf /etc/nginx/conf.d/$website.conf /home/$website/$website.conf_HTTP
+yes | cp -rf  /etc/vpssim/.tmp/$website.conf_HTTPS /home/$website/$website.conf_HTTPS
+yes | cp -rf  /etc/vpssim/.tmp/$website.conf_HTTPS /etc/nginx/conf.d/$website.conf
+rm -rf /etc/vpssim/.tmp/$website.conf_HTTPS
+rm -rf /home/$website/public_html/vpssim.check2
+echo "Check SSL Setup" > /home/$website/public_html/vpssim.check2
+service nginx restart
+
+checkurlstt=$(curl -o /dev/null --silent --head --write-out '%{http_code}' "https://$website/vpssim.check2")
+rm -rf /home/$website/public_html/vpssim.check2
+if [[ ! "$checkurlstt" == "200" ]]; then
+yes | cp -rf  /home/$website/$website.conf_HTTP /etc/nginx/conf.d/$website.conf
+
+service nginx restart
+
+clear
+echo "========================================================================="
+echo "VPSSIM can not finish install SSL for $websiteTO."
+echo "-------------------------------------------------------------------------"
+echo "You must to edit the Vhost file of $website follow:"
+echo "-------------------------------------------------------------------------"
+echo "File Vhost: /etc/nginx/conf.d/$website.conf"
+echo "-------------------------------------------------------------------------"
+echo "Backup Vhost: /home/$website/$website.conf_HTTP"
+echo "-------------------------------------------------------------------------"
+echo "Backup SSL Vhost: /home/$website/$website.conf_HTTPS"
+/etc/vpssim/menu/vpssim-letsencrypt-menu
+else
+nextgiahan=`cat /root/.acme.sh/$website/$website.conf | grep NextRenewTimeStr | cut -d \" -f 2 `
+curTime=$(date +%s)
+thoigiangiahangiay=`cat /root/.acme.sh/$website/$website.conf | grep Le_NextRenewTime= | cut -d \" -f 2`
+hieuthoigianconlai=$(calc $thoigiangiahangiay-$curTime)
+thoigiannengiahanlai=$(calc $hieuthoigianconlai/60/60/24)
+thoigianconlai=$(calc $thoigiannengiahanlai+10)
+clear
+echo "========================================================================="
+echo "Setup SLL Let's Encrypt for $website finished."
+echo "-------------------------------------------------------------------------"
+echo "Access $website on the browser to check."
+echo "-------------------------------------------------------------------------"
+if [ -f /home/$website/public_html/wp-config.php ]; then
+echo "$websiteTO using Wordpress code. "
+echo "-------------------------------------------------------------------------"
+echo "You should setup and activate plugin [ Really Simple SSL ]."
+echo "-------------------------------------------------------------------------"
+fi 
+echo "Backup Vhost: /home/$website/$website.conf_HTTP"
+echo "-------------------------------------------------------------------------"
+echo "Backup SSL Vhost: /home/$website/$website.conf_HTTPS"
+if [ -f /etc/vpssim/Renew.SSL.Letencrypt ] && [ -f /etc/cron.d/vpssim.autorenew.ssl.cron ]; then
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM auto renew certificate after: $thoigiannengiahanlai days."
+else
+echo "-------------------------------------------------------------------------"
+echo "YOU DID NOT ENABLE [ AUTO RENEW CERTIFICATE ] FUNCTION !"
+fi
+/etc/vpssim/menu/vpssim-letsencrypt-menu
+fi
+;;
+    *)
+clear 
+echo "========================================================================= "
+echo "Cancel !"
+/etc/vpssim/menu/vpssim-letsencrypt-menu
+        ;;
+esac

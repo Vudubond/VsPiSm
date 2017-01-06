@@ -1,0 +1,206 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+
+echo "========================================================================="
+echo "Use this function to close port for server via IPtables "
+echo "-------------------------------------------------------------------------"
+echo -n "Type in Port you want to CLOSE [ENTER]: " 
+read portclose
+if [ "$portclose" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please fill accurately"
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+
+if [[ ! ${portclose} =~ ^[0-9]+$ ]] ;then 
+clear
+echo "========================================================================="
+echo "The port you type in: ${portclose} is not a number."
+echo "-------------------------------------------------------------------------"
+echo "Please try again !" 
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+
+if [ "$(iptables -L -n | grep :$portclose | awk 'NR==1 {print $1}')" == "DROP" ]; then
+clear
+echo "========================================================================="
+echo "Port $portclose is already CLOSED."
+echo "-------------------------------------------------------------------------"
+echo "You don need to re-close it! " 
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+
+if ! [[ $portclose -ge 1 && $portclose -le 65535  ]] ; then  
+clear
+echo "========================================================================="
+echo "$portclose is wrong!"
+echo "-------------------------------------------------------------------------"
+echo "The Port must be a number within range of (1 - 65535)."
+echo "-------------------------------------------------------------------------"
+echo "Please try again !" 
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi  
+
+if [ "$(iptables -L -n | grep :80 | awk 'NR==1 {print $1}')" == "ACCEPT" ]; then
+if [ $portclose = 80 ]; then
+echo "========================================================================="
+echo "You are trying to close port 80"
+echo "-------------------------------------------------------------------------"
+echo "If you close this port, nobody can access to website on this server"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to close port 80 ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "Please wait...";sleep 1
+clear
+echo "========================================================================="
+	echo "The port you want to CLOSE: $portclose"
+	echo "-------------------------------------------------------------------------"
+	iptables -I INPUT -p tcp --dport $portclose -j DROP
+	service iptables save
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+        ;;
+    *)
+        clear
+echo "========================================================================="
+echo "You cancel close port 80"
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+        ;;
+esac
+exit
+fi
+fi
+
+if [ "$(iptables -L -n | grep :25 | awk 'NR==1 {print $1}')" == "ACCEPT" ]; then
+if [ $portclose = 25 ]; then
+echo "========================================================================="
+echo "You are trying to close port 25"
+echo "-------------------------------------------------------------------------"
+echo "If you close this port, the email service can not send email correct!"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to close port 25 ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "Please wait...";sleep 1
+clear
+echo "========================================================================="
+	echo "The port you want to CLOSE: $portclose"
+	echo "-------------------------------------------------------------------------"
+	iptables -I INPUT -p tcp --dport $portclose -j DROP
+	service iptables save
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+        ;;
+    *)
+        clear
+echo "========================================================================="
+echo "You cancel close port 25"
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+        ;;
+esac
+exit
+fi
+fi
+
+
+if [ "$(iptables -L -n | grep :21 | awk 'NR==1 {print $1}')" == "ACCEPT" ]; then
+if [ $portclose = 21 ]; then
+echo "========================================================================="
+echo "You are trying to close port 21"
+echo "-------------------------------------------------------------------------"
+echo "If you close this port, the FTP service can not be used!"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to close port 21 ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+clear
+echo "========================================================================="
+	echo "The port you want to CLOSE: $portclose"
+	echo "-------------------------------------------------------------------------"
+	iptables -I INPUT -p tcp --dport $portclose -j DROP
+	service iptables save
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+        ;;
+    *)
+        clear
+echo "========================================================================="
+echo "You cancel close port 21"
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+        ;;
+esac
+exit
+fi
+fi
+
+
+if [ "$(iptables -L -n | grep :443 | awk 'NR==1 {print $1}')" == "ACCEPT" ]; then
+if [ $portclose = 443 ]; then
+echo "========================================================================="
+echo "You are trying to close port 443"
+echo "-------------------------------------------------------------------------"
+echo "If you close this port, all website use SSL will not be access to!"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to close port 443 ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+clear
+echo "========================================================================="
+	echo "The port you want to CLOSE: $portclose"
+	echo "-------------------------------------------------------------------------"
+	iptables -I INPUT -p tcp --dport $portclose -j DROP
+	service iptables save
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+        ;;
+    *)
+        clear
+echo "========================================================================="
+echo "You cancel close port 443"
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+        ;;
+esac
+exit
+fi
+fi
+
+
+if [ $portclose = 22 ]; then
+clear
+echo "========================================================================="
+echo "You can not close SSH port !"
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+
+if [ $portclose = 3306 ]; then
+clear
+echo "========================================================================="
+echo "You can not close MySQL port !"
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+
+if [ $portclose = $priport ]; then
+clear
+echo "========================================================================="
+echo "Port $portclose is Phpmyadmin port. Please use function "
+echo "-------------------------------------------------------------------------"
+echo "[Open/Close Phpmyadmin Port] if you want to Open/Close port $portclose!" 
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+
+clear
+echo "========================================================================="
+echo "The port you want to CLOSE: $portclose"
+echo "-------------------------------------------------------------------------"
+iptables -I INPUT -p tcp --dport $portclose -j DROP
+service iptables save
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+fi

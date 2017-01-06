@@ -1,0 +1,93 @@
+#!/bin/bash
+. /home/vpssim.conf
+if [ ! -f /etc/vpssim/netdatasite.info ]; then
+clear
+echo "========================================================================="
+echo "You have not installed NetData for server !"
+/etc/vpssim/menu/vpssim-netdata-menu
+exit
+fi
+netdatasite=$(cat /etc/vpssim/netdatasite.info)
+if [ ! -f /etc/nginx/conf.d/$netdatasite.conf ]; then
+clear
+echo "========================================================================="
+echo "Changing for NetData Domain error!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-netdata-menu
+exit
+fi
+echo "========================================================================= "
+echo "Use this function to change NetData domain to other Domain."
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to change NetData domain ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+sleep 1
+echo "-------------------------------------------------------------------------"
+echo -n "Type in new NetData domain [ENTER]: " 
+read website
+website=`echo $website | tr '[A-Z]' '[a-z]'`
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "You entered incorrectly, please re-enter !"
+/etc/vpssim/menu/vpssim-netdata-menu
+exit
+fi
+
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,12}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a domain name!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-netdata-menu
+exit
+fi
+
+if [ "$netdatasite" = "$website" ]; then
+clear
+echo "========================================================================="
+echo "Please type in the other domain !"
+/etc/vpssim/menu/vpssim-netdata-menu
+exit
+fi
+
+if [ -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "Discover that $website is existed in the system!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-netdata-menu
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+
+mv /etc/nginx/conf.d/$netdatasite.conf /etc/nginx/conf.d/$website.conf
+sed -i "s/server_name ${netdatasite};/server_name ${website};/g" /etc/nginx/conf.d/$website.conf
+
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else 
+systemctl reload nginx
+fi
+echo "$website" > /etc/vpssim/netdatasite.info
+clear
+echo "========================================================================="
+echo "Change Domain for NetData finished !"
+echo "-------------------------------------------------------------------------"
+echo "Point $website to $serverip"
+echo "-------------------------------------------------------------------------"
+echo "And access to this domain on the browser to use NetData."
+/etc/vpssim/menu/vpssim-netdata-menu
+;;
+esac
+clear
+echo "========================================================================="
+echo "Cancel change domain NetData !"
+/etc/vpssim/menu/vpssim-netdata-menu

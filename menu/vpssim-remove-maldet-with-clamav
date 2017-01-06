@@ -1,0 +1,30 @@
+#!/bin/bash 
+printf "=========================================================================\n"
+printf "This will completely remove LMD in your VPS including all quarantine data\n"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to remove LMD? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    sleep 1
+echo "Remove Linux Malware Detect... "
+sleep 1
+rm -rf /usr/local/maldetect* /etc/cron.d/maldet_pub /etc/cron.daily/maldet /usr/local/sbin/maldet /usr/local/sbin/lmd
+yum remove -y clamav-server clamav-data clamav-update clamav-filesystem clamav clamav-scanner-systemd clamav-devel clamav-lib clamav-server-systemd
+#rpm -e --nodeps `rpm -aq | grep -i clamav` 
+cd
+clear
+clear
+echo "========================================================================= "
+echo "Remove Linux Malware Detect Finished ! "
+
+/etc/vpssim/menu/vpssim-maldet-menu
+;;
+    *)
+
+        ;;
+esac
+       clear 
+echo "========================================================================= "
+echo "Cancel remove Linux Malware Detect."
+/etc/vpssim/menu/vpssim-maldet-menu

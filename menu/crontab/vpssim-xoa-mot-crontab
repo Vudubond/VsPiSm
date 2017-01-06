@@ -1,0 +1,81 @@
+#!/bin/bash 
+. /home/vpssim.conf
+if [ ! -d "/etc/vpssim/crontab" ]; then
+mkdir -p /etc/vpssim/crontab
+else
+rm -r -f /etc/vpssim/crontab/*
+fi
+if [ "$(crontab -l | awk 'NR==1 {print $1}')" == "" ]; then
+clear
+echo "========================================================================= "
+echo "We do not find any crontab on this server !"
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu
+exit
+fi
+echo "========================================================================="
+echo "Type in the right-hand side of the crontab command only. "
+echo "-------------------------------------------------------------------------"
+echo "Example: Want to delete crontab: * * * * * /root/abc ,type in : /root/abc"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the right-hand side of the crontab [ENTER]:" 
+read cronjob
+
+if [ "$cronjob" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please type accurately!"
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu
+exit
+fi
+
+if [ "$cronjob" = "auto-start-mysql" ]; then
+clear
+echo "========================================================================="
+echo "You can not remove this crontab !"
+echo "-------------------------------------------------------------------------"
+echo "Please use the function [Auto re-start MySQL Server] in [Tools - Addon]"
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu
+exit
+fi
+
+echo "$cronjob" > /etc/vpssim/crontab/test7.txt
+if [ ! "$(grep "*" /etc/vpssim/crontab/test7.txt | awk '{print $2}')" == "" ]; then
+clear
+echo "========================================================================="
+echo "Remove crontab failed ! "
+echo "-------------------------------------------------------------------------"
+echo "You must type in the right-hand side of the crontab! "
+rm -r -f /etc/vpssim/crontab/test7.txt
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu
+exit
+fi
+
+crontab -l > /etc/vpssim/crontab/test2.txt
+crontab -u root -l | grep -v $cronjob | crontab -u root -
+crontab -l > /etc/vpssim/crontab/test3.txt
+if [ "$(wc -l /etc/vpssim/crontab/test2.txt | awk '{print $1}')" == "$(wc -l /etc/vpssim/crontab/test3.txt | awk '{print $1}')" ]; then
+rm -r -f /etc/vpssim/crontab/*
+clear
+echo "========================================================================= "
+echo "Remove crontab failed or crontab does not exist in the system. "
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu
+else
+rm -r -f /etc/vpssim/crontab/*
+clear
+echo "========================================================================= "
+echo "Successfully removed crontab !"
+if [ "$(crontab -l | awk 'NR==1 {print $1}')" == "" ]; then
+echo "-------------------------------------------------------------------------"
+echo "Currently no active crontab."
+else
+echo "-------------------------------------------------------------------------"
+echo "List Currently Crontab:"
+echo "-------------------------------------------------------------------------"
+crontab -l
+fi
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu
+exit
+fi
+

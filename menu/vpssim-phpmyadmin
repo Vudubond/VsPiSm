@@ -1,0 +1,85 @@
+#!/bin/bash
+
+. /home/vpssim.conf
+
+if [ -f /home/$mainsite/private_html/index.php ]; then 
+echo "========================================================================="
+echo "Use this function to ENABLE / DISABLE Phpmyadmin"
+echo "-------------------------------------------------------------------------"
+echo "Phpmyadmin link is ENABLE, whoever know the $priport can access it"
+echo "========================================================================="
+read -r -p "Do you want to DISABLE it? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY])
+    echo "-------------------------------------------------------------------------" 
+    echo "Please wait...";sleep 1 
+	mv /home/$mainsite/private_html/index.php /home/$mainsite/private_html/index.bak
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service php-fpm restart
+fi
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "7" ]; then 
+systemctl restart php-fpm.service
+fi
+	rm -f /home/$mainsite/private_html/index.html
+    cat > "/home/$mainsite/private_html/index.html" <<END
+<!DOCTYPE html>
+<html id="VPSSIM" lang="en-US" dir="LTR" class="Public Cute Pig" xmlns:fb="http://www.facebook.com/2008/fbml">
+<head>
+<meta charset="utf-8"/>
+<title>Cute Pig !!!</title>
+</head>
+<body>
+<center><img src="https://vpssim.com/script/vpssim/pig.jpg"></center><br><br>
+<center>What do you want?</center>
+</body>
+</html>
+END
+clear
+echo "========================================================================="
+	echo "Phpmyadmin link is disable successful !"
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+        ;;
+    *)
+clear
+echo "========================================================================="
+echo "You have choose NO !"
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+        ;;
+esac
+exit
+fi
+echo "========================================================================="
+echo "Use this function to ENABLE / DISABLE Phpmyadmin"
+echo "========================================================================="
+echo "Current: Phpmyadmin link is DISABLE !"
+echo "-------------------------------------------------------------------------"
+read -r -p "Do you want to Enable it? [y/N] " response
+echo "-------------------------------------------------------------------------"
+echo "Please wait...";sleep 1 
+case $response in
+    [yY][eE][sS]|[yY]) 
+	mv /home/$mainsite/private_html/index.bak /home/$mainsite/private_html/index.php
+	rm -f /home/$mainsite/private_html/index.html
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service php-fpm restart
+fi
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "7" ]; then 
+systemctl restart php-fpm.service
+fi
+clear
+        echo "========================================================================="
+        echo "Phpmyadmin link is Enabled successful !"
+echo "-------------------------------------------------------------------------"
+               echo "Access phpmyadmin through: $mainsite:$priport  or $serverip:$priport"
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+        ;;
+    *)
+               clear
+ echo "========================================================================="
+echo "You choose NO !"
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+
+        ;;
+esac
+exit
+fi

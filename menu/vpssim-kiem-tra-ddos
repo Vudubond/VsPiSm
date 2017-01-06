@@ -1,0 +1,22 @@
+#!/bin/sh
+prompt="Type in your choice (5-Exit):"
+options=("Connections to 80 & 443 Port" "Connections are SYN_RECV" "IP connecting & connectons/IP" "Block IP")
+printf "=========================================================================\n"
+printf "                VPSSIM - Manage VPS/Server by VPSSIM.COM             \n"
+printf "=========================================================================\n"
+printf "                   Check DDOS, Flood & Block IP DOS\n"
+printf "=========================================================================\n"
+PS3="$prompt"
+select opt in "${options[@]}" "Exit"; do 
+
+    case "$REPLY" in
+    1 ) /etc/vpssim/menu/checkddos/vpssim-so-ket-noi;;
+    2 ) /etc/vpssim/menu/checkddos/vpssim-so-rysync;;
+    3 ) netstat -an|grep :80 |awk '{print $5}'|cut -d":" -f1|sort|uniq -c|sort -rn;;
+    4 ) /etc/vpssim/menu/vpssim-chan-ip-ddos;;
+      
+    $(( ${#options[@]}+1 )) ) echo "Bye!";  clear && /bin/vpssim;;
+    *) echo "You typed wrong, please type in the ordinal number on the list";continue;;
+
+    esac
+done

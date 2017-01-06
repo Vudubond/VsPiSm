@@ -1,0 +1,19 @@
+#!/bin/sh
+. /home/vpssim.conf
+if [ ! -f /etc/php.d/opcache.ini ]; then
+clear
+echo "========================================================================="
+echo "Zend Opcache current DISABLE"
+echo "-------------------------------------------------------------------------"
+echo "Please enable it to use this function"
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+else
+echo "-------------------------------------------------------------------------"
+echo "Please wait..."; sleep 1
+clear
+echo "========================================================================="
+echo "Use Link Below To View Zend Opcache Status:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/ocp.php"
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+fi

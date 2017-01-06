@@ -1,0 +1,25 @@
+#!/bin/bash 
+. /home/vpssim.conf
+echo "========================================================================="
+read -r -p "You want to completely erase all current cronjob? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "Prepare to erase... "
+sleep 3
+crontab -r
+(crontab -u root -l ; echo "*/5 * * * * auto-start-mysql") | crontab -u root -
+clear
+echo "========================================================================= "
+echo "VPSSIM finished deleting all current Crontab "
+echo "-------------------------------------------------------------------------"
+echo "[Auto re-start MySQL Server] is re-actived."
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu
+;;
+    *)
+        echo ""
+        ;;
+esac
+clear 
+echo "========================================================================="
+echo "You cancel to erase all crontab."
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu

@@ -1,0 +1,57 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+if [ -f /etc/csf/csf.conf ]; then
+if [ "$(cat /etc/csf/csf.deny | awk 'NR==1 {print $1}')" == "" ]; then
+clear
+echo "========================================================================="
+echo "There are no IP blocked by CSF Firewall."
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi
+fi
+
+if [ -f /etc/csf/csf.conf ]; then
+echo "========================================================================="
+test_csf=$(csf -v | awk 'NR==1 {print $NF}')
+if [ "$test_csf" == "enable" ]; then
+echo "This function will enable CSF firewall if you are disabling it on VPS"
+echo "-------------------------------------------------------------------------" 
+fi
+if [ "$test_csf" == "enable" ]; then
+csf -e
+fi
+echo "Please wait...."
+sleep 1
+rm -r -f /home/$mainsite/private_html/csf-block.txt
+cp /etc/csf/csf.deny /home/$mainsite/private_html/csf-block.txt
+chmod -R 644 /home/$mainsite/private_html/csf-block.txt
+sed -i '1s/^/List IP was blocked by CSF FireWall Block - Created by VPSSIM \n\n/' /home/$mainsite/private_html/csf-block.txt
+clear
+echo "========================================================================= "
+echo "Link view list IP blocked by CSF:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/csf-block.txt"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+else
+echo "========================================================================= "
+echo "This funcion run with CSF Firewall"
+echo "-------------------------------------------------------------------------"
+echo "CSF Firewall is not installed ! "
+echo "-------------------------------------------------------------------------"
+read -r -p "Do you want to install CSF Firewall on this VPS [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+/etc/vpssim/menu/CSF-Fiwall/vpssim-cai-dat-csf-csf
+clear
+echo "========================================================================= "
+echo "Successfully installed and configed CSF Firewall"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+;;
+esac
+clear
+echo "========================================================================= "
+echo "You cancel install CSF Firewall ! "
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi

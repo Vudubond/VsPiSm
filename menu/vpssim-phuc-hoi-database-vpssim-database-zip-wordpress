@@ -1,0 +1,41 @@
+#!/bin/sh
+. /home/vpssim.conf
+website=$(cat /tmp/vpssim-tensitephuchoi)
+dataname=$(cat /tmp/vpssim-tendatabasephuchoi)
+randomcode=`date |md5sum |cut -c '1-18'`
+echo "========================================================================="
+	echo "Discovered backup file VPSSIM-DATABASE.zip"
+	echo "-------------------------------------------------------------------------"
+	echo "Prepare to restore  .... "
+	echo "-------------------------------------------------------------------------"
+	sleep 2
+	rm -rf /tmp/vpssim-sql
+	mkdir -p /tmp/vpssim-sql
+	unzip /home/$website/public_html/VPSSIM-DATABASE.zip -d /tmp/vpssim-sql
+	ls /tmp/vpssim-sql > /tmp/vpssim-datasql-name
+	tenbackup=$(cat /tmp/vpssim-datasql-name)
+	mysql -u root -p$mariadbpass $dataname < /tmp/vpssim-sql/$tenbackup > /tmp/abc
+	date -r /var/lib/mysql/$dataname +%H%M%S> /tmp/vpssim2
+	rm -rf /tmp/vpssim-sql/$tenbackup
+	check1=`cat /tmp/vpssim1`
+	check2=`cat /tmp/vpssim2`
+		if [ "$check1" == "$check2" ]; then
+		rm -rf /tmp/*vpssim*
+		sleep 8
+		clear
+		echo "========================================================================="
+		echo "Restore $dataname failed "
+		echo "-------------------------------------------------------------------------"
+		echo "Please check your backup file and try again !"
+		/etc/vpssim/menu/vpssim-wordpress-tools-menu
+		else	
+		rm -rf /tmp/*vpssim*
+		mv /home/$website/public_html/VPSSIM-DATABASE.zip /home/$website/public_html/VPSSIM-DATABASE.zip.$randomcode
+		clear
+		echo "========================================================================="
+		echo "Restore database $dataname successfully!"
+		echo "-------------------------------------------------------------------------"
+		echo "Backup file was renamed to VPSSIM-DATABASE.zip.$randomcode"
+		/etc/vpssim/menu/vpssim-wordpress-tools-menu
+		exit
+		fi

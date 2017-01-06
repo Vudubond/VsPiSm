@@ -1,0 +1,333 @@
+#!/bin/bash
+. /home/vpssim.conf
+version=2.1.0.1
+echo "========================================================================="
+echo "Add website + Auto setup Opencart $version"
+echo "-------------------------------------------------------------------------"
+echo "After add domain to Server, Your Website will ready to run."
+echo "-------------------------------------------------------------------------"
+echo "You do not need setup Opencart Code."
+echo "========================================================================="
+echo -n "Type in the domain name [ENTER]: " 
+read website
+website=`echo $website | tr '[A-Z]' '[a-z]'`
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "You must type in the domain."
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a domain name!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi
+if [ -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "Discover that $website is existed in the system"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo -n "Type in Admin User [ENTER]: " 
+read adminopencart
+if [ "$adminopencart" = "" ]; then
+echo "========================================================================="
+echo "You must type in user for Opencart admin."
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi
+if [[ ! ${#adminopencart} -ge 5 ]]; then
+clear
+echo "========================================================================="
+echo "User admin must be at least 5 characters long "
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi 
+checkuseradmin="^[a-zA-Z0-9_][-a-zA-Z0-9_]{0,61}[a-zA-Z0-9_]$";
+if [[ ! "$adminopencart" =~ $checkuseradmin ]]; then
+clear
+echo "========================================================================="
+echo "You must use only numbers, letters for user admin."
+echo "-------------------------------------------------------------------------"
+echo "Please try again  !"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi 
+echo "-------------------------------------------------------------------------"
+echo "After setup Opencart, use your email to get the password for Admin User"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in your email [ENTER]: " 
+read uremail
+if [ "$uremail" = "" ]; then
+clear
+echo "========================================================================="
+echo "You must type in your email."
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi
+
+kiemtraemail="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,15}$";
+if [[ ! "$uremail" =~ $kiemtraemail ]]; then
+clear
+echo "========================================================================="
+echo "Email address $uremail is invalid"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi
+
+echo "-------------------------------------------------------------------------"
+echo "Prepare To Download and Install Opencart $version ..."
+sleep 2
+    mkdir -p /home/$website/public_html
+    mkdir -p /home/$website/logs
+    cd /home/$website/public_html
+    wget https://codeload.github.com/opencart/opencart/zip/$version
+    echo "-------------------------------------------------------------------------"
+echo "Download Finished. Start Installation ..."
+sleep 6
+    unzip -o $version
+    mv -f opencart-$version/upload/* ./
+    rm -rf opencart-$version
+    rm -rf $version
+    cd
+chown -R nginx:nginx /home/$website/public_html
+find /home/$website/public_html -type d -exec chmod g+s {} \;
+\cp -uf /etc/vpssim/menu/robots.txt /home/$website/public_html/
+    cat > "/etc/nginx/conf.d/$website.conf" <<END
+server {
+	    server_name www.$website;
+	    rewrite ^(.*) http://$website\$1 permanent;
+    	}
+server {
+	    listen   80;
+
+    	access_log off;
+    	# access_log   /home/$website/logs/access_log;
+    	error_log off;
+    	# error_log /home/$website/logs/error.log;
+    	add_header X-Frame-Options SAMEORIGIN;
+		add_header X-Content-Type-Options nosniff;
+		add_header X-XSS-Protection "1; mode=block";
+		root /home/$website/public_html;
+include /etc/nginx/conf/ddos2.conf;
+	index index.php index.html index.htm;
+    	server_name $website;
+
+#///////////////////////////////////////////////////////
+# You can use only 1 rule (AAA or BBB or CCC or DDD)
+# Please do not delete line AAA, BBB, CCC or DDD. Only Comment it if you do not use. 
+# All of them need for [ Config Vhost For Plugin Cache ] function in [ Wordpress Blog Tools ]
+#///////////////////////////////////////////////////////
+
+#Run all the websites (Wordpress, Xenforo, Joomla, Phpbb .... ),if you use your rule, comment the line below (AAA)
+include /etc/nginx/conf/all.conf;
+
+# If you use your rule, comment the line above , and  Uncoment 3 lines belows and set your rule within it.. (BBB)
+#location / {
+#Uncomment 3 lines and set your rules here!
+#}
+
+# Rule cho wordpress + Plugin wp super cache. (CCC)
+#include /etc/nginx/conf/supercache.conf;  
+
+# Rule cho wordpress + Plugin W3 Total Cache. (DDD)
+#include /etc/nginx/conf/w3total.conf;  
+
+# Security, sql injection propeller ....(uncoment if you want to use). Because some website plugins do not run with this config, so VPSSIM to turn off default
+# And do not delete the line below or VPSSIM will not work !
+#include /etc/nginx/conf/block.conf;
+
+# Config Cache Static Files
+include /etc/nginx/conf/staticfiles.conf;
+
+# Error Page
+#error_page 403 /errorpage_html/403.html;
+#error_page 404 /errorpage_html/404.html;
+#error_page 405 /errorpage_html/405.html;
+#error_page 502 /errorpage_html/502.html;
+#error_page 503 /errorpage_html/503.html;
+#error_page 504 /errorpage_html/504.html;
+#location ^~ /errorpage_html/ {
+#   internal;
+#    root /home/$website;
+#    access_log              off;
+#}
+ 
+    	location ~ \.php$ {
+		fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        include /etc/nginx/fastcgi_params;
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+		fastcgi_connect_timeout 250;
+		fastcgi_send_timeout 250;
+		fastcgi_read_timeout 250;
+		fastcgi_buffer_size 256k;
+		fastcgi_buffers 4 256k;
+		fastcgi_busy_buffers_size 256k;
+		fastcgi_temp_file_write_size 256k;
+		fastcgi_intercept_errors on;
+        fastcgi_param SCRIPT_FILENAME /home/$website/public_html\$fastcgi_script_name;
+    	}
+	
+
+#include /etc/nginx/conf/phpstatus.conf;
+include /etc/nginx/conf/drop.conf;
+
+    }
+END
+mkdir -p /home/$website/errorpage_html && cp -r /etc/vpssim/errorpage_html/*.html /home/$website/errorpage_html
+   echo "$website" > /tmp/databasename.txt
+#echo $website | sed "s/\./_/" | sed "s/\-/_/" | cut -c1-14  > /tmp/databasename.txt  
+sed -i 's/\./_/g' /tmp/databasename.txt
+sed -i 's/\-/_/g' /tmp/databasename.txt
+random=`date |md5sum |cut -c '1-4'`
+dataname=`cat /tmp/databasename.txt | cut -c1-11`_$random
+username=`cat /tmp/databasename.txt | sed "s/\_//" | sed "s/\_//" | sed "s/\_//" | sed "s/\_//" | cut -c1-10`$random
+password=`date |md5sum |cut -c '14-29'`
+rm -rf /tmp/databasename.txt
+cat > "/tmp/config.temp" <<END
+CREATE DATABASE $dataname COLLATE utf8_general_ci;
+END
+
+mysql -u root -p$mariadbpass < /tmp/config.temp
+rm -f /tmp/config.temp
+
+ cat > "/tmp/config.temp" <<END
+CREATE USER '$username'@'localhost' IDENTIFIED BY '$password';
+END
+
+	mysql -u root -p$mariadbpass < /tmp/config.temp
+	rm -f /tmp/config.temp
+
+    cat > "/tmp/config.temp" <<END
+GRANT ALL PRIVILEGES ON $dataname . * TO '$username'@'localhost';
+END
+	mysql -u root -p$mariadbpass < /tmp/config.temp
+	rm -f /tmp/config.temp
+
+    cat > "/tmp/config.temp" <<END
+FLUSH PRIVILEGES;
+END
+	mysql -u root -p$mariadbpass < /tmp/config.temp
+	rm -f /tmp/config.temp
+
+echo "=========================================================================" >> /home/DBinfo.txt
+echo "Database: $dataname - Created on: $(date +%d/%m/%Y) when add $website to VPS" >> /home/DBinfo.txt
+echo "=========================================================================" >> /home/DBinfo.txt
+echo "Data name: $dataname" >> /home/DBinfo.txt
+echo "Username: $username" >> /home/DBinfo.txt
+echo "password: $password" >> /home/DBinfo.txt
+echo "" >> /home/DBinfo.txt
+cp -r /etc/vpssim/menu/database-example/database-example-opencart2101.tar.gz  /tmp/database-example-opencart2101.sql
+rm -rf /tmp/opencartinstall
+cat > "/tmp/opencartinstall" <<END
+sed -i 's/adminvpssim/$adminopencart/g' /tmp/database-example-opencart2101.sql
+sed -i 's/emailadmin/$uremail/g' /tmp/database-example-opencart2101.sql
+sed -i 's/domainexample/$website/g' /tmp/database-example-opencart2101.sql
+END
+chmod +x /tmp/opencartinstall
+/tmp/opencartinstall
+mysql -u root -p$mariadbpass $dataname < /tmp/database-example-opencart2101.sql
+rm -rf /tmp/*opencart*
+rm -rf /home/$website/public_html/config-dist.php
+rm -rf /home/$website/public_html/admin/config-dist.php
+rm -rf /home/$website/public_html/opencart-$version
+cat > "/home/$website/public_html/config.php" <<END
+<?php
+// HTTP
+define('HTTP_SERVER', 'http://$website/');
+
+// HTTPS
+define('HTTPS_SERVER', 'http://$website/');
+
+// DIR
+define('DIR_APPLICATION', '/home/$website/public_html/catalog/');
+define('DIR_SYSTEM', '/home/$website/public_html/system/');
+define('DIR_LANGUAGE', '/home/$website/public_html/catalog/language/');
+define('DIR_TEMPLATE', '/home/$website/public_html/catalog/view/theme/');
+define('DIR_CONFIG', '/home/$website/public_html/system/config/');
+define('DIR_IMAGE', '/home/$website/public_html/image/');
+define('DIR_CACHE', '/home/$website/public_html/system/storage/cache/');
+define('DIR_DOWNLOAD', '/home/$website/public_html/system/storage/download/');
+define('DIR_LOGS', '/home/$website/public_html/system/storage/logs/');
+define('DIR_MODIFICATION', '/home/$website/public_html/system/storage/modification/');
+define('DIR_UPLOAD', '/home/$website/public_html/system/storage/upload/');
+/// DB
+define('DB_DRIVER', 'mysqli');
+define('DB_HOSTNAME', 'localhost');
+define('DB_USERNAME', '$username');
+define('DB_PASSWORD', '$password');
+define('DB_DATABASE', '$dataname');
+define('DB_PORT', '3306');
+define('DB_PREFIX', 'oc_');
+?>
+END
+cat > "/home/$website/public_html/admin/config.php" <<END
+<?php
+// HTTP
+define('HTTP_SERVER', 'http://$website/admin/');
+define('HTTP_CATALOG', 'http://$website/');
+
+// HTTPS
+define('HTTPS_SERVER', 'http://$website/admin/');
+define('HTTPS_CATALOG', 'http://$website/');
+
+// DIR
+define('DIR_APPLICATION', '/home/$website/public_html/admin/');
+define('DIR_SYSTEM', '/home/$website/public_html/system/');
+define('DIR_LANGUAGE', '/home/$website/public_html/admin/language/');
+define('DIR_TEMPLATE', '/home/$website/public_html/admin/view/template/');
+define('DIR_CONFIG', '/home/$website/public_html/system/config/');
+define('DIR_IMAGE', '/home/$website/public_html/image/');
+define('DIR_CACHE', '/home/$website/public_html/system/storage/cache/');
+define('DIR_DOWNLOAD', '/home/$website/public_html/system/storage/download/');
+define('DIR_LOGS', '/home/$website/public_html/system/storage/logs/');
+define('DIR_MODIFICATION', '/home/$website/public_html/system/storage/modification/');
+define('DIR_UPLOAD', '/home/$website/public_html/system/storage/upload/');
+define('DIR_CATALOG', '/home/$website/public_html/catalog/');
+
+
+// DB
+define('DB_DRIVER', 'mysqli');
+define('DB_HOSTNAME', 'localhost');
+define('DB_USERNAME', '$username');
+define('DB_PASSWORD', '$password');
+define('DB_DATABASE', '$dataname');
+define('DB_PORT', '3306');
+define('DB_PREFIX', 'oc_');
+?>
+END
+rm -rf /home/$website/public_html/install
+chown -R nginx:nginx /home/$website/public_html/
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+service php-fpm restart
+else 
+systemctl reload nginx
+systemctl restart php-fpm.service
+fi
+clear
+echo "========================================================================="
+echo "$website is added to server & Pre-Setup Opencart $version successfully "
+echo "-------------------------------------------------------------------------"
+echo "Admin Info: User: $adminopencart | Email: $uremail"
+echo "-------------------------------------------------------------------------"
+echo "Use Forgotten Password in http://$website/admin "
+echo "-------------------------------------------------------------------------"
+echo "To get password for $adminopencart"
+echo "-------------------------------------------------------------------------"
+echo "Database's infomation saved in: /home/DBinfo.txt"
+/etc/vpssim/menu/vpssim-them-website-menu

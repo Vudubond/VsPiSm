@@ -1,0 +1,200 @@
+#!/bin/sh
+. /home/vpssim.conf
+rm -rf /tmp/*hostingaz*
+ls /etc/nginx/conf.d > /tmp/vpssim-websitelist
+sed -i 's/\.conf//g' /tmp/vpssim-websitelist 
+ cat > "/tmp/vpssim-replace" <<END
+sed -i '/$mainsite/d' /tmp/vpssim-websitelist
+END
+chmod +x /tmp/vpssim-replace
+/tmp/vpssim-replace
+rm -rf /tmp/vpssim-replace
+rm -rf /tmp/checksite-list
+sowebsitetrenserver=$(cat /tmp/vpssim-websitelist | wc -l)
+listwebsite=$(cat /tmp/vpssim-websitelist)
+rm -rf /tmp/checksite-list
+for checksite in $listwebsite 
+do
+if [ -f /home/$checksite/public_html/index.php ]; then
+echo "$checksite" >> /tmp/checksite-list
+fi
+ done
+
+if [ ! -f /tmp/checksite-list ]; then
+rm -rf /tmp/*vpssim*
+rm -rf /tmp/*hostingaz*
+clear
+echo "========================================================================="
+echo "There's no website has data on system"
+echo "--------------------------------------------------------------------------"
+echo "You do not need using this function !"
+/etc/vpssim/menu/vpssim-sao-luu
+fi
+nhapwebsite ()
+{
+echo -n "Type in website [ENTER]: " 
+read website
+website=`echo $website | tr '[A-Z]' '[a-z]'`
+}
+echo "========================================================================="
+echo "Use this function to backup website code in server"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the website [ENTER]: " 
+read website
+website=`echo $website | tr '[A-Z]' '[a-z]'`
+if [ "$website" = "" ]; then
+echo "========================================================================="
+echo "You typed wrong, Please fill accurately"
+echo "-------------------------------------------------------------------------"
+nhapwebsite
+fi
+
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+echo "========================================================================="
+echo "$website maybe not a domain name!"
+echo "-------------------------------------------------------------------------"
+nhapwebsite
+fi
+
+if [ ! -d /home/$mainsite/private_html/backup/$website ]; then
+mkdir -p /home/$mainsite/private_html/backup/$website/
+fi
+
+if [ -f /home/$website/public_html/index.php ]; then
+echo "-------------------------------------------------------------------------"
+echo "Discovered $website on server"
+backuphomename=-`date |md5sum |cut -c '1-12'`
+
+if [ -f /home/$mainsite/private_html/backup/$website/*.zip ]; then
+find /home/$mainsite/private_html/backup/$website -name '*.zip' -type f -exec basename {} \;  > /tmp/backupname
+filename=`cat /tmp/backupname`
+rm -rf /tmp/backupname
+
+echo "-------------------------------------------------------------------------"
+echo "Discover the old backup file: $filename"
+echo "--------------------------------------------------------------------------"
+echo "Backup Time: $(date -r /home/$mainsite/private_html/backup/$website/$filename +%H:%M/%F)"
+echo "-------------------------------------------------------------------------"
+read -r -p "Delete it and create the new backup file? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+	echo "Prepare to backup $website ..."
+	sleep 1
+	if [  -f /bin/vpssim-backupcode-$website ]; then
+	if [ ! "$(grep vpssim-backupcode-$website /etc/cron.d/vpssim.code.cron)" == "" ]; then
+pathname=$(grep "\/home\/$mainsite\/private_html\/backup\/$website" /bin/vpssim-backupcode-$website | awk 'NR==6 {print $3}')
+filename2=$(basename $pathname)
+thongbao=$(echo "($website Enabled Auto Backup)")
+	else
+filename2=$website$backuphomename.zip
+thongbao=$(echo "")
+	fi
+else
+filename2=$website$backuphomename.zip
+thongbao=$(echo "")
+fi
+	cd /home/$website/public_html/
+	zip -r $website.zip *
+	rm -rf /home/$mainsite/private_html/backup/$website/*.zip
+	mv $website.zip /home/$mainsite/private_html/backup/$website/$filename2
+
+clear
+echo "========================================================================="
+echo "Link Backup File:"
+if [  -f /bin/vpssim-backupcode-$website ]; then
+	if [ ! "$(grep vpssim-backupcode-$website /etc/cron.d/vpssim.code.cron)" == "" ]; then
+echo "-------------------------------------------------------------------------"
+echo "$thongbao"
+fi
+fi
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/backup/$website/$filename2"
+/etc/vpssim/menu/vpssim-sao-luu
+        ;;
+    *)
+        ;;
+esac
+cd /home/$mainsite/private_html/backup/$website
+if [ -f /home/$mainsite/private_html/backup/$website/*.zip ]; then
+for file in *.zip; do
+time=$(date -r /home/$mainsite/private_html/backup/$website/$file +%H%M-%d%m%y)
+    mv "$file" "`basename $file .zip`.zip.$time"
+    echo "$file.$time" > /tmp/vpssim_ten_file_cu
+done
+fi
+cd
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM Will Rename Old Backup File To:"
+echo "-------------------------------------------------------------------------"
+echo "`cat /tmp/vpssim_ten_file_cu`"
+echo "-------------------------------------------------------------------------"
+echo "Then Create Backup File For $website"
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+sleep 4
+if [  -f /bin/vpssim-backupcode-$website ]; then
+	if [ ! "$(grep vpssim-backupcode-$website /etc/cron.d/vpssim.code.cron)" == "" ]; then
+pathname=$(grep "\/home\/$mainsite\/private_html\/backup\/$website" /bin/vpssim-backupcode-$website | awk 'NR==6 {print $3}')
+filename2=$(basename $pathname)
+thongbao=$(echo " ($website Enabled Auto Backup)")
+	else
+filename2=$website$backuphomename.zip
+thongbao=$(echo "")
+	fi
+else
+filename2=$website$backuphomename.zip
+thongbao=$(echo "")
+fi
+	cd /home/$website/public_html/
+	zip -r $website.zip *
+	mv $website.zip /home/$mainsite/private_html/backup/$website/$filename2
+clear
+echo "========================================================================="
+echo "Link Backup File:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/backup/$website/$filename2"
+echo "-------------------------------------------------------------------------"
+echo "Your Old Backup File Was Renamed To:"
+echo "-------------------------------------------------------------------------"
+echo "$(cat /tmp/vpssim_ten_file_cu)"
+rm -rf /tmp/*vpssim*
+/etc/vpssim/menu/vpssim-sao-luu
+else
+echo "-------------------------------------------------------------------------"
+	echo "Prepare to backup $website ..."
+	sleep 1
+	if [  -f /bin/vpssim-backupcode-$website ]; then
+	if [ ! "$(grep vpssim-backupcode-$website /etc/cron.d/vpssim.code.cron)" == "" ]; then
+pathname=$(grep "\/home\/$mainsite\/private_html\/backup\/$website" /bin/vpssim-backupcode-$website | awk 'NR==6 {print $3}')
+filename2=$(basename $pathname)
+thongbao=$(echo " ($website Enabled Auto Backup)")
+	else
+filename2=$website$backuphomename.zip
+thongbao=$(echo "")
+	fi
+else
+filename2=$website$backuphomename.zip
+thongbao=$(echo "")
+fi
+	cd /home/$website/public_html/
+	zip -r $website.zip *
+	rm -rf /home/$mainsite/private_html/backup/$website/*.zip
+	mv $website.zip /home/$mainsite/private_html/backup/$website/$filename2
+echo "Done... "
+clear
+echo "========================================================================="
+echo "Link Backup File:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/backup/$website/$filename2"
+/etc/vpssim/menu/vpssim-sao-luu
+fi
+else
+clear
+echo "========================================================================="
+echo "$website does not exit on server or it does not have data "
+/etc/vpssim/menu/vpssim-sao-luu
+fi
+

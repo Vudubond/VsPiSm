@@ -1,0 +1,102 @@
+#!/bin/sh
+. /home/vpssim.conf
+. /etc/vpssim/pwprotect.default
+if [ ! -d /etc/nginx/pwprotect ]; then
+mkdir -p /etc/nginx/pwprotect
+fi
+
+if [ ! -f /etc/vpssim/netdatasite.info ]; then
+clear
+echo "========================================================================="
+echo "You have not installed NetData for server !"
+/etc/vpssim/menu/vpssim-netdata-menu
+exit
+fi
+netdatasite=$(cat /etc/vpssim/netdatasite.info)
+if [ ! -f /etc/nginx/.htpasswd ]; then
+clear
+echo "You must create default User & password before using this function. "
+echo "-------------------------------------------------------------------------"
+echo "Create it by: VPSSIM Menu => Default User & Password."
+/etc/vpssim/menu/vpssim-netdata-menu
+exit
+fi
+
+if [ "$(grep auth_basic_user_file /etc/nginx/conf.d/$netdatasite.conf)" == "" ] ; then 
+echo "========================================================================="
+echo "Use this function to Enable/Disable protection NetData domain "
+echo "-------------------------------------------------------------------------"
+echo "Login Info: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to protect NetData domain? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+echo "Please wait ... "
+sleep 1
+rm -rf /tmp/baovedomainnetdata
+   cat >> "/tmp/baovedomainnetdata" <<END
+sed -i "/server_name\ $netdatasite;/aauth_basic \"Authorization Required\";" /etc/nginx/conf.d/$netdatasite.conf
+sed -i "/.*Authorization\ Required.*/aauth_basic_user_file  /etc/nginx/.htpasswd;" /etc/nginx/conf.d/$netdatasite.conf
+END
+chmod +x /tmp/baovedomainnetdata
+/tmp/baovedomainnetdata
+rm -rf /tmp/baovedomainnetdata
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else 
+systemctl reload nginx
+fi
+;;
+    *)
+       clear 
+echo "========================================================================= "
+echo "Cancel ! "
+/etc/vpssim/menu/vpssim-netdata-menu
+        ;;
+esac
+clear 
+echo "========================================================================= "
+echo "Config protection NetData domain finished"
+echo "-------------------------------------------------------------------------"
+echo "Login infomation: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+/etc/vpssim/menu/vpssim-netdata-menu
+
+else
+
+echo "========================================================================="
+echo "Current domain NetData has protected with default login info.."
+echo "-------------------------------------------------------------------------"
+echo "Login Info: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to disable protection NetData domain ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+echo "Please wait ... "
+sleep 1
+sed -i '/auth_basic/d' /etc/nginx/conf.d/$netdatasite.conf
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else 
+systemctl reload nginx
+fi
+;;
+    *)
+       clear 
+echo "========================================================================= "
+echo "Cancel !"
+/etc/vpssim/menu/vpssim-netdata-menu
+        ;;
+esac
+clear 
+echo "========================================================================= "
+echo "Disable protection NetData domain finished."
+/etc/vpssim/menu/vpssim-netdata-menu
+fi

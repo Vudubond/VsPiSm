@@ -1,0 +1,30 @@
+#!/bin/bash 
+. /home/vpssim.conf
+
+if [ "$(crontab -l | awk 'NR==1 {print $1}')" == "" ]; then
+clear
+echo "========================================================================= "
+echo "We do not find any crontab on this server !"
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu
+exit
+fi
+echo "========================================================================= "
+read -r -p "You want to completely erase all current cronjob? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "Prepare to erase... "
+sleep 3
+crontab -r
+clear
+echo "========================================================================= "
+echo "VPSSIM finished deleting all current Crontab. "
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu
+;;
+    *)
+        echo ""
+        ;;
+esac
+clear 
+echo "========================================================================="
+echo "You cancel erase all Crontab !"
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu

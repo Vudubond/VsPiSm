@@ -1,0 +1,36 @@
+#!/bin/bash
+. /home/vpssim.conf
+saoluudata ()
+{
+echo "Please do not turn off this screen....!"
+rm -rf /home/$mainsite/private_html/backup/AllDB
+mkdir -p /home/$mainsite/private_html/backup/AllDB
+cd /home/$mainsite/private_html/backup/AllDB
+mysqldump -u root -p$mariadbpass -A | gzip -6 > AllDB_$abc456.sql.gz
+clear
+echo "========================================================================="
+echo "Link file backup :"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/backup/AllDB/AllDB_$abc456.sql.gz"
+/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-tat-ca-database-menu
+}
+abc456=`date |md5sum |cut -c '1-5'`
+
+if [ -f /home/$mainsite/private_html/backup/AllDB/*.sql.gz ]; then
+echo "Discover the old backup !"
+echo "--------------------------------------------------------------------------"
+read -r -p "Delete it and create new backup file ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+	echo "Backing up databases.........."
+	sleep 1
+	saoluudata
+        ;;
+    *)
+        echo ""
+        ;;
+esac
+else
+	echo "Backing up databases..........."
+	saoluudata
+fi

@@ -1,0 +1,60 @@
+#!/bin/bash 
+if [ -f /etc/csf/csf.conf ]; then
+if [ "$(cat /etc/csf/csf.deny | awk 'NR==1 {print $1}')" == "" ]; then
+clear
+echo "========================================================================="
+echo "There are no IP blocked by CSF Firewall."
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi
+fi
+if [ -f /etc/csf/csf.conf ]; then
+echo "========================================================================="
+test_csf=$(csf -v | awk 'NR==1 {print $NF}')
+if [ "$test_csf" == "enable" ]; then
+echo "This function will enable CSF firewall if you are disabling it on VPS"
+echo "-------------------------------------------------------------------------" 
+fi
+read -r -p "Are you sured want to unblock all IP ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo " Please wait.."
+sleep 1
+if [ "$test_csf" == "enable" ]; then
+csf -e
+fi
+csf -df
+clear 
+echo "========================================================================= "
+echo "Any IP blocked by CSF now can access to VPS"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+;;
+    *)
+       clear 
+echo "========================================================================= "
+echo "You cancel unblock all IP"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+        ;;
+esac
+else
+echo "========================================================================= "
+echo "This funcion run with CSF Firewall"
+echo "-------------------------------------------------------------------------"
+echo "CSF Firewall is not installed ! "
+echo "-------------------------------------------------------------------------"
+read -r -p "Do you want to install CSF Firewall on this VPS [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+/etc/vpssim/menu/CSF-Fiwall/vpssim-cai-dat-csf-csf
+clear
+echo "========================================================================= "
+echo "Successfully installed and configed CSF Firewall"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+;;
+esac
+clear
+echo "========================================================================= "
+echo "You cancel install CSF Firewall ! "
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi

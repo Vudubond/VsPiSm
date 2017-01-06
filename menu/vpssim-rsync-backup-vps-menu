@@ -1,0 +1,49 @@
+#!/bin/bash
+if [ -f /etc/vpssim/vpssim_backup_VPS_by_rsync ]; then
+	if [ ! -f /etc/cron.d/vpssim.rsync.cron ]; then
+	rm -rf /etc/vpssim/vpssim_backup_VPS_by_rsync
+	fi
+fi
+if [ -f /etc/cron.d/vpssim.rsync.cron ]; then
+	if [ ! -f /etc/vpssim/vpssim_backup_VPS_by_rsync ]; then
+	rm -rf /etc/cron.d/vpssim.rsync.cron
+	fi
+fi 
+options=("Connect To VPS Backup" "Setting Time Sync" "Sync To VPS Backup Now" "Setup CSF Firewall" "Change Password User Root" "Disable Sync To VPS Backup" "Exit")
+#prompt="Nhap lua chon cua ban (7-Thoat): "
+prompt="Type in your choice (7-Exit):"
+printf "=========================================================================\n"
+printf "                VPSSIM - Manager VPS/Server by VPSSIM.COM \n"
+printf "=========================================================================\n"
+printf "                           VPS Backup Manage \n"
+printf "=========================================================================\n"
+if [ -f /etc/vpssim/vps_backup_rsync.info ]; then
+if [ ! "$(grep "thanhcong" /etc/vpssim/vps_backup_rsync.info | awk '{print $3}')" == "" ]; then
+printf "            VPS Backup: Config Finished | IP: $(grep "ipaddress" /etc/vpssim/vps_backup_rsync.info | awk '{print $3}') \n"
+printf "=========================================================================\n"
+fi
+fi
+PS3="$prompt"
+select opt in "${options[@]}" ; do 
+
+    case "$REPLY" in
+
+
+    1) /etc/vpssim/menu/vpssim-rsync-ket-noi-vps-backup;;
+    2) /etc/vpssim/menu/vpssim-rsync-cau-hinh-thu-muc-sao-luu;;
+    3) /etc/vpssim/menu/vpssim-rsync-sync-toi-vps-backup-ngay;;
+    4) /etc/vpssim/menu/vpssim-rsync-cai-dat-csf-firewall-cho-vps-backup;;
+    5) /etc/vpssim/menu/vpssim-rsync-doi-mat-khau-tai-khoan-root-vps-backup;;
+    6) /etc/vpssim/menu/vpssim-rsync-ngat-ket-noi-vps-backup;;
+    7) clear && vpssim;;
+       # *) echo "Ban nhap sai, vui long nhap so thu tu trong danh sach";continue;;
+        *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+
+    esac
+
+done
+
+
+
+
+

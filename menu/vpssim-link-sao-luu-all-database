@@ -1,0 +1,27 @@
+#!/bin/bash
+. /home/vpssim.conf
+
+if [ ! -f /home/$mainsite/private_html/backup/AllDB/*.sql.gz ]; then
+clear
+echo "========================================================================="
+echo "You have not made backup all database !"
+echo "-------------------------------------------------------------------------"
+echo "Please check again."
+/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-tat-ca-database-menu
+exit
+fi
+find /home/$mainsite/private_html/backup/AllDB/ -type f -exec basename {} \;  > /tmp/backupname
+filename=`cat /tmp/backupname`
+rm -rf /tmp/backupname
+echo "Please wait..."
+sleep 1
+clear
+echo "========================================================================="
+echo "Discovered backup file on server"
+echo "-------------------------------------------------------------------------"
+echo "Link download backup: "
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/backup/AllDB/$filename"
+/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-tat-ca-database-menu
+exit
+fi

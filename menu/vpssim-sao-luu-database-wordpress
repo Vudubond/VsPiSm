@@ -1,0 +1,92 @@
+#!/bin/bash
+. /home/vpssim.conf
+echo "========================================================================="
+echo "Use this function to Backup database in .sql.gz format for WP websbite"
+echo "========================================================================="
+echo -n "Type in website: " 
+read website
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please type in accurately!  "
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a domain name !"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "Can not discover $website !"
+echo "-------------------------------------------------------------------------"
+echo "Please try again"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ -f /home/$website/public_html/wp-config-sample.php ]; then
+if [ ! -f /home/$website/public_html/wp-config.php ]; then
+clear
+echo "========================================================================="
+echo "$website has wordpress code but not install yet !"
+echo "-------------------------------------------------------------------------"
+echo "Please setup wordpress first and try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+fi
+if [ ! -f /home/$website/public_html/wp-config.php ]; then
+clear
+echo "========================================================================="
+echo "$website is not wordpress blog!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again."
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+tendatabase=`cat /home/$website/public_html/wp-config.php | grep DB_NAME | cut -d \' -f 4`
+echo "-------------------------------------------------------------------------"
+echo "Discovered $website in system"
+echo "-------------------------------------------------------------------------"
+echo "$website use wordpress code"
+echo "-------------------------------------------------------------------------"
+echo "$website use database: $tendatabase"
+echo "-------------------------------------------------------------------------"
+echo "Prepare to backup .... "
+echo "-------------------------------------------------------------------------"
+sleep 2
+randomwp=`date |md5sum |cut -c '1-7'`
+echo "`date '+%d%m%H'`" > /tmp/datetime
+if [ ! -d /home/$website/public_html/0-VPSSIM ]; then
+mkdir -p /home/$website/public_html/0-VPSSIM
+fi
+cd /home/$website/public_html/0-VPSSIM
+if [ "$(grep "default_storage_engine = MyISAM" /etc/my.cnf.d/server.cnf | awk 'NR==1 {print $3}')" = "MyISAM" ]; then
+mysqldump -u root -p$mariadbpass $tendatabase --lock-tables=false | gzip -6 > $tendatabase-$randomwp-$(cat /tmp/datetime).sql.gz
+else
+mysqldump -u root -p$mariadbpass $tendatabase --single-transaction | gzip -6 > $tendatabase-$randomwp-$(cat /tmp/datetime).sql.gz
+fi
+
+cd
+clear
+if [ -f /home/$website/public_html/0-VPSSIM/$tendatabase-$randomwp-$(cat /tmp/datetime).sql.gz ]; then
+echo "========================================================================="
+echo "Backup database $tendatabase successfully !"
+echo "-------------------------------------------------------------------------"
+echo "Link download backup:"
+echo "-------------------------------------------------------------------------"
+echo "http://$website/0-VPSSIM/$tendatabase-$randomwp-$(cat /tmp/datetime).sql.gz"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+else
+echo "=========================================================================" 
+echo "Backup database failed"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+fi

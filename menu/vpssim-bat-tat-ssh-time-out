@@ -1,0 +1,105 @@
+
+#!/bin/bash 
+. /home/vpssim.conf
+if [ ! -f /etc/ssh/sshd_config ]; then
+clear
+echo "========================================================================="
+echo "Can not find file /etc/ssh/sshd_config"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM can not run this function on this server"
+echo "-------------------------------------------------------------------------"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+if [ "$(grep vpssimsshconfig /etc/ssh/sshd_config)" == "" ]; then
+echo "========================================================================="
+echo "Use this function to config the disconnection times from SSH clients "
+echo "-------------------------------------------------------------------------"
+echo "to server. SSH Timeout Status:"
+echo "-------------------------------------------------------------------------"
+echo "ENABLE: Connection to server will be disconnected with default config"
+echo "-------------------------------------------------------------------------"
+echo "DISABLE: Connection to server will be stopped after 24 hours of inactivity."
+echo "========================================================================="
+echo "Current SSH Timeout: ENABLE"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to DISABLE SSH Timeout ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait ... "
+    sleep 3
+sed -i '1 i\#vpssimsshconfig\ #Do\ not\ edit\ or\ remove\ this\ line\ or\ VPSSIM \will\ not\ run' /etc/ssh/sshd_config
+sed -i "s/.*TCPKeepAlive.*/TCPKeepAlive\ no/g" /etc/ssh/sshd_config
+sed -i "s/.*ClientAliveInterval.*/ClientAliveInterval\ 30/g" /etc/ssh/sshd_config
+sed -i "s/.*ClientAliveCountMax.*/ClientAliveCountMax\ 100/g" /etc/ssh/sshd_config
+
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service sshd restart
+else 
+systemctl restart sshd
+fi
+clear
+echo "========================================================================="
+echo "DISABLED SSH Timeout successfully! "
+echo "-------------------------------------------------------------------------"
+echo "Connection to server will be disconnected after 24 hours of inactivity"
+ /etc/vpssim/menu/vpssim-tien-ich
+    ;;
+*)
+clear
+echo "========================================================================="
+echo "You choosed NO "
+ /etc/vpssim/menu/vpssim-tien-ich
+  exit
+;;
+esac
+fi
+
+if [ ! "$(grep vpssimsshconfig /etc/ssh/sshd_config)" == "" ]; then
+echo "========================================================================="
+echo "Use this function to config the disconnection times from SSH clients "
+echo "-------------------------------------------------------------------------"
+echo "to server. SSH Timeout Status:"
+echo "-------------------------------------------------------------------------"
+echo "ENABLE: Connection to server will be disconnected with default config"
+echo "-------------------------------------------------------------------------"
+echo "DISABLE: Connection to server will be stopped after 24 hours of inactivity."
+echo "========================================================================="
+echo "Current SSH Timeout: DISABLE"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to ENABLE SSH Timeout ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait ... "
+    sleep 3
+
+sed -i '/vpssimsshconfig/d' /etc/ssh/sshd_config
+sed -i "s/.*TCPKeepAlive.*/#TCPKeepAlive\ no/g" /etc/ssh/sshd_config
+sed -i "s/.*ClientAliveInterval.*/#ClientAliveInterval\ 30/g" /etc/ssh/sshd_config
+sed -i "s/.*ClientAliveCountMax.*/#ClientAliveCountMax\ 100/g" /etc/ssh/sshd_config
+
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service sshd restart
+else 
+systemctl restart sshd
+fi
+
+clear
+echo "========================================================================="
+echo "ENABLED SSH Timeout successfully! "
+echo "-------------------------------------------------------------------------"
+echo "Connection to server will be disconnected with default config time."
+ /etc/vpssim/menu/vpssim-tien-ich
+    ;;
+*)
+clear
+echo "========================================================================="
+echo "You choosed NO "
+ /etc/vpssim/menu/vpssim-tien-ich
+  exit
+;;
+esac
+fi
+

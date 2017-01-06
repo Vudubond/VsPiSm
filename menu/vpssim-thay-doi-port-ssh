@@ -1,0 +1,108 @@
+#!/bin/bash
+. /home/vpssim.conf
+sshPortdefault=$((grep "Port" /etc/ssh/sshd_config) | head -n 1)
+portcu=$(cat /etc/ssh/sshd_config | grep Port | awk 'END {print $2}')
+if [ ! "$sshPortdefault" == "#Port 22" ]; then
+clear
+echo "You have change SSH port without using VPSSIM"
+echo "-------------------------------------------------------------------------"
+echo "This function will not RUN !"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+if [[ ${portcu} =~ ^[0-9]+$ ]] ;then
+echo "========================================================================="
+echo "Current SSH Port: $portcu"
+fi
+echo "========================================================================="
+if [[ ! ${portcu} =~ ^[0-9]+$ ]] ;then
+echo "By default, we connect to server via SSH using port 22"
+echo "-------------------------------------------------------------------------"
+fi
+echo "Use this function to change SSH port number for server"
+echo "-------------------------------------------------------------------------"
+read -r -p "Would you like to change the ssh port? [Y/N] " response
+#read -r -p "Ban muon thay doi SSH port? [Y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "-------------------------------------------------------------------------"
+echo "New SSH Port must be a number within range of (30000 - 50000)"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in new SSH port you want to use [ENTER]: " 
+read sshport
+
+if ! [[ $sshport -ge 30000 && $sshport -le 50000  ]] ; then 
+clear
+echo "========================================================================="
+echo "The Port you typed in: ${sshport} is wrong."
+echo "-------------------------------------------------------------------------"
+echo "SSH port must be a number within range of (30000 - 50000) !" 
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+if [ "$priport" = "$sshport" ]; then
+clear
+echo "========================================================================="
+echo "Port you typed in similar to phpmyadmin port!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi 
+if [ "$portcu" = "$sshport" ]; then
+clear
+echo "========================================================================="
+echo "Port you typed in similar to current SSH port!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi 
+if [[ ! ${portcu} =~ ^[0-9]+$ ]] ;then
+ echo "Port $sshport" >> /etc/ssh/sshd_config
+ echo "-------------------------------------------------------------------------"
+ echo "please wait..."; sleep 1
+/etc/vpssim/menu/vpssim-cai-dat-remove-csf-ssh-port
+service sshd restart
+clear
+echo "========================================================================="
+echo "You have changed SSH port ! New SSH port is $sshport"
+echo "-------------------------------------------------------------------------"
+echo "Command to login with new port:"
+echo "-------------------------------------------------------------------------"
+echo "ssh root@$serverip -p $sshport"
+echo "-------------------------------------------------------------------------"
+echo "Upload via sFTP:"
+echo "-------------------------------------------------------------------------"
+echo "Host: sftp://$serverip, User & Pass: Root's info, Port: $sshport" 
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi 
+cat > "/tmp/changeportssh" <<END
+sed -i 's/Port $portcu/Port $sshport/g' /etc/ssh/sshd_config
+END
+chmod +x /tmp/changeportssh
+/tmp/changeportssh
+rm -rf /tmp/changeportssh
+echo "-------------------------------------------------------------------------"
+echo "please wait..."; sleep 1
+/etc/vpssim/menu/vpssim-cai-dat-remove-csf-ssh-port
+service sshd restart
+clear
+echo "========================================================================="
+echo "You have changed SSH port ! New SSH port is $sshport"
+echo "-------------------------------------------------------------------------"
+echo "Command to login with new port:"
+echo "-------------------------------------------------------------------------"
+echo "ssh root@$serverip -p $sshport"
+echo "-------------------------------------------------------------------------"
+echo "Upload via sFTP:"
+echo "-------------------------------------------------------------------------"
+echo "Host: sftp://$serverip, User & Pass: Root's info, Port: $sshport" 
+/etc/vpssim/menu/vpssim-tien-ich
+esac
+clear
+echo "========================================================================="
+echo "You cancel change SSH port !"
+/etc/vpssim/menu/vpssim-tien-ich
+

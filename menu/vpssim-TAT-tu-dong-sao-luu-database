@@ -1,0 +1,36 @@
+#!/bin/sh
+
+. /home/vpssim.conf
+dataname=$(cat /tmp/databaseautobackup)
+
+echo "-------------------------------------------------------------------------"
+echo "Database $dataname is being ENABLED Auto backup"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to DISABLE Auto backup for $dataname  ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait ..."
+sleep 1
+rm -rf /bin/vpssim-backupdb-$dataname
+if [ -f /etc/cron.d/vpssim.db.cron ]; then
+cat > "/tmp/removebackupdb" <<END
+sed -i '/vpssim-backupdb-$dataname/d' /etc/cron.d/vpssim.db.cron
+END
+chmod +x /tmp/removebackupdb
+/tmp/removebackupdb 
+rm -rf /tmp/removebackupdb
+service crond restart
+fi
+clear
+echo "========================================================================="
+echo "Disable Auto Backup Database $dataname successful."
+/etc/vpssim/menu/vpssim-them-xoa-database
+        ;;
+    *)
+        clear
+echo "========================================================================= "
+echo "Cancel DISABLE Auto Backup Database $dataname !"
+/etc/vpssim/menu/vpssim-them-xoa-database
+        ;;
+esac

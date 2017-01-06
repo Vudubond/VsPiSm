@@ -1,0 +1,75 @@
+
+#!/bin/bash 
+
+. /home/vpssim.conf
+checktruenumber='^[0-9]+$'
+if [ ! -f /etc/vpssim/minfreedisc.info ]; then
+echo "1000" > /etc/vpssim/minfreedisc.info
+fi
+minfreedisc=`cat /etc/vpssim/minfreedisc.info`
+if ! [[ $minfreedisc =~ $checktruenumber ]] ; then
+echo "1000" > /etc/vpssim/minfreedisc.info
+fi 
+disfreehientai=$(calc $(df $PWD | awk '/[0-9]%/{print $(NF-2)}')/1024)
+if ! [[ $disfreehientai =~ $checktruenumber ]] ; then
+clear
+echo "========================================================================="
+echo "Sorry ! "
+echo "-------------------------------------------------------------------------"
+echo "Your server do not support running this function"
+echo "-------------------------------------------------------------------------"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+if [ "$disfreehientai" -lt "1000" ]; then
+clear
+echo "========================================================================="
+echo "Sorry ! Current FREE DISC < 1000 MB"
+echo "-------------------------------------------------------------------------"
+echo "You can not run this function "
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+
+echo "========================================================================="
+echo "Current FREE DISC: $disfreehientai MB | Low Disk Space Warning: $minfreedisc MB"
+echo "========================================================================="
+echo "Use this function to create Low Disk Space Alerts on VPSSIM main Menu"
+echo "-------------------------------------------------------------------------"
+echo "when free disc of root partition smaller than [Low Disk Space Warning]" 
+echo "-------------------------------------------------------------------------"
+echo "[Low Disk Space Warning] must be  > 1000 and < ${disfreehientai}"
+echo "========================================================================="
+echo -n "Type in [Low Disk Space Warning] [MB]: " 
+read minfreedisca
+
+if [ "$minfreedisca" = "" ]; then
+clear
+echo "========================================================================="
+echo "Please type in [Low Disk Space Warning]!"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+
+if ! [[ ${minfreedisca} -ge 1000 && ${minfreedisca} -le ${disfreehientai} ]] ; then  
+clear
+echo "========================================================================="
+echo "$minfreedisca is not correct!"
+echo "-------------------------------------------------------------------------"
+echo "[Low Disk Space Warning] must be a number within range of (1000 - ${disfreehientai}) "
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-tien-ich
+exit
+fi
+echo "-------------------------------------------------------------------------"  
+echo "VPSSIM will alerts when free disc of root partition < ${minfreedisca} MB"
+echo "-------------------------------------------------------------------------" 
+echo "Please wait ..." ; sleep 2
+echo "${minfreedisca}" > /etc/vpssim/minfreedisc.info 
+clear
+echo "========================================================================="
+echo "Create a Low Disk Space alert finished"
+echo "-------------------------------------------------------------------------" 
+echo "Low Disk Space Warning: ${minfreedisca} MB "
+/etc/vpssim/menu/vpssim-tien-ich

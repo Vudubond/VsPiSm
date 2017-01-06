@@ -1,0 +1,35 @@
+
+#!/bin/bash 
+
+. /home/vpssim.conf
+if [ -f /etc/csf/csf.conf ]; then
+test_csf=$(csf -v | awk 'NR==1 {print $NF}')
+if [ "$test_csf" == "enable" ]; then
+clear
+echo "========================================================================= "
+echo "CSF is already Disable ! "
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+else
+echo "========================================================================= "
+echo "CSF Firewall should be Enable to protect VPS/Server!!"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to Disable CSF FireWall ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+csf -x
+clear
+echo "========================================================================= "
+echo "Disable CSF firewall Successful ! "
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+;;
+esac
+clear
+echo "========================================================================= "
+echo "You cancel Disable CSF Firewall ! "
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi
+else
+/etc/vpssim/menu/CSF-Fiwall/vpssim-tat-csf
+exit
+fi

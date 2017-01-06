@@ -1,0 +1,20 @@
+#!/bin/bash
+. /home/vpssim.conf
+
+if [ "$(crontab -l | awk 'NR==1 {print $1}')" == "" ]; then
+echo "Please wait....";sleep 1
+clear
+echo "========================================================================= "
+echo "We do not find any crontab on this server !"
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu
+exit
+fi
+echo "Please wait....";sleep 1
+clear
+echo "========================================================================= "
+echo "List of current Crontab:"
+echo "-------------------------------------------------------------------------"
+crontab -l
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu
+exit
+fi

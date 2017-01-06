@@ -1,0 +1,96 @@
+#!/bin/bash
+. /home/vpssim.conf
+code=-`date |md5sum |cut -c '1-15'`
+nhapwebsite ()
+{
+echo -n "Type in website [ENTER]: " 
+read website
+website=`echo $website | tr '[A-Z]' '[a-z]'`
+}
+echo "========================================================================="
+echo "Use this function to get link download backup file for website"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in website [ENTER]: " 
+read website
+website=`echo $website | tr '[A-Z]' '[a-z]'`
+if [ "$website" = "" ]; then
+echo "========================================================================="
+echo "You typed wrong, Please fill accurately"
+echo "-------------------------------------------------------------------------"
+nhapwebsite
+fi
+
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+echo "========================================================================="
+echo "$website maybe not a domain name!"
+echo "-------------------------------------------------------------------------"
+nhapwebsite
+fi
+
+if [ ! -f /home/$website/public_html/index.php ]; then
+echo "========================================================================="
+echo "$website does not exit on server "
+echo "-------------------------------------------------------------------------"
+nhapwebsite
+fi
+
+if [ -f /home/$mainsite/private_html/backup/$website/*.zip ]; then
+find /home/$mainsite/private_html/backup/$website/ -name '*.zip' -type f -exec basename {} \;  > /etc/vpssim/linkbackup
+filename=`cat /etc/vpssim/linkbackup`
+echo "-------------------------------------------------------------------------"
+echo "Please wait..."
+sleep 1
+#####################
+rm -rf /home/$mainsite/private_html/ListBackup$website*
+rm -rf /tmp/linkbackupal
+find /home/$mainsite/private_html/backup/$website/ -type f -exec basename {} \;  > /tmp/linkbackupall
+backupall=$(cat /tmp/linkbackupall)
+if [ "$(cat /tmp/linkbackupall | wc -l)" -gt 1 ]; then
+echo "========================================================================================================================"  > /home/$mainsite/private_html/ListBackup-$website$code.txt
+echo "                               Link Download Backup Files For $website - Created by VPSSIM"  >> /home/$mainsite/private_html/ListBackup-$website$code.txt
+echo "========================================================================================================================" >> /home/$mainsite/private_html/ListBackup-$website$code.txt
+echo ""  >> /home/$mainsite/private_html/ListBackup-$website$code.txt
+echo "Most Recent Backup File (Created On $(date -r /home/$mainsite/private_html/backup/$website/$filename +%H:%M/%F)): " >> /home/$mainsite/private_html/ListBackup-$website$code.txt
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/ListBackup-$website$code.txt
+echo "http://$serverip:$priport/backup/$website/$filename" >> /home/$mainsite/private_html/ListBackup-$website$code.txt
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/ListBackup-$website$code.txt
+echo "All Backup Files:" >> /home/$mainsite/private_html/ListBackup-$website$code.txt
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/ListBackup-$website$code.txt
+for backupfile in $backupall
+do
+echo "http://$serverip:$priport/backup/$website/$backupfile" >> /home/$mainsite/private_html/ListBackup-$website$code.txt
+done
+fi
+#########################
+if [ "$(cat /tmp/linkbackupall | wc -l)" -gt 1 ]; then
+showinfo=`echo "Most Recent Backup (Created On $(date -r /home/$mainsite/private_html/backup/$website/$filename +%H:%M/%F)):"`
+else
+showinfo=`echo "Backup File (Created On $(date -r /home/$mainsite/private_html/backup/$website/$filename +%H:%M/%F)):"`
+fi
+clear
+echo "========================================================================="
+echo "Discovered $website on server !"
+echo "-------------------------------------------------------------------------"
+echo "$showinfo"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/backup/$website/$filename"
+if [ "$(cat /tmp/linkbackupall | wc -l)" -gt 1 ]; then
+echo "-------------------------------------------------------------------------"
+echo "List All Backup Files:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/ListBackup-$website$code.txt"
+fi
+rm -rf /etc/vpssim/linkbackup
+rm -rf /tmp/linkbackupall
+echo "" >> /home/$mainsite/private_html/ListBackup-$website$code.txt
+echo "===================================================The End==============================================================" >> /home/$mainsite/private_html/ListBackup-$website$code.txt
+/etc/vpssim/menu/vpssim-sao-luu
+else
+clear
+echo "========================================================================="
+echo "You did not create backup for $website yet!"
+/etc/vpssim/menu/vpssim-sao-luu
+exit
+fi

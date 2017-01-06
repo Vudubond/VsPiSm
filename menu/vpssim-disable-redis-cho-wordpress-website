@@ -1,0 +1,103 @@
+#!/bin/bash 
+. /home/vpssim.conf
+if [ ! "$(redis-cli ping)" = "PONG" ]; then
+clear
+echo "========================================================================="
+echo "Redis Cache current Stopped"
+echo "-------------------------------------------------------------------------"
+echo "Please start it by command [ service redis start ]"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+echo "========================================================================="
+echo "Use this function to DISABLE Redis cache for Wordpress Website"
+echo "========================================================================="
+echo -n "Type in the domain  [ENTER]: " 
+read website
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please fill accurately."
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a domain name!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "$website is not exist in the system!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ ! -f /home/$website/public_html/wp-config.php ]; then
+clear
+echo "========================================================================="
+echo "$website not using wordpress code or did not finish setup!"
+echo "-------------------------------------------------------------------------"
+echo "Please setup wordpress first or try with other domain"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [  "$(grep "WP_CACHE_KEY_SALT" /home/$website/public_html/wp-config.php)" == "" ]; then
+clear
+echo "========================================================================="
+echo "$website not use Redis Cache"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo "Discovered $website in system"
+echo "========================================================================= "
+read -r -p "You want to Enable Redis Cache for $website ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will disable Redis Cache for $website"
+echo "-------------------------------------------------------------------------"
+echo "Plugins will be deleted: Nginx-Hepler, Redis Object Cache"
+echo "-------------------------------------------------------------------------"
+echo "Please wait.... !"
+sleep 5
+echo "-------------------------------------------------------------------------"
+if [ -d /home/$website/public_html/wp-content/plugins/redis-cache ]; then
+rm -rf /home/$website/public_html/wp-content/plugins/redis-cache
+fi
+if [ -d /home/$website/public_html/wp-content/plugins/nginx-helper ]; then
+rm -rf /home/$website/public_html/wp-content/plugins/nginx-helper
+fi
+sed -i '/WP_CACHE_KEY_SALT/d' /home/$website/public_html/wp-config.php
+sed -i '/WP_CACHE/d' /home/$website/public_html/wp-config.php
+rm -rf /home/$website/public_html/wp-content/object-cache.php
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service php-fpm restart
+service redis restart
+else
+systemctl restart php-fpm.service
+systemctl restart redis.service
+fi
+;;
+    *)
+       clear 
+echo "========================================================================= "
+echo "Canlce Disable Redis Cache for $website "
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+        ;;
+esac
+clear
+echo "========================================================================="
+echo "DISABLE Redis for $website Successful "
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+
+

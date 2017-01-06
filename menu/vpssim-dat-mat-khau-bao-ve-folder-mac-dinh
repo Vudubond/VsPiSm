@@ -1,0 +1,174 @@
+#!/bin/sh
+. /etc/vpssim/pwprotect.default
+if [ ! -d /etc/nginx/pwprotect ]; then
+mkdir -p /etc/nginx/pwprotect
+fi
+if [ -f /etc/nginx/.htpasswd ]; then
+echo "========================================================================="
+echo "Use default User & Password to protect: phpMyAdmin, Backup Files, NetData"
+echo "-------------------------------------------------------------------------"
+echo "Net2FTP, Website's Folder, WP-Login.php, status.php, File Manager ..."
+echo "-------------------------------------------------------------------------" 
+echo "Current Username & Password:"
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+echo "========================================================================="
+prompt="Type in your choice: "
+options=( "Change Default Username & Password" "Do Not Change Current Info (Exit)")
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+    case "$REPLY" in
+    1) chooseacction="thaythongtindangnhapmacdinh"; break;;
+    2) chooseacction="Exit"; break;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+###################################
+#Thay Thong Tin Dang Nhap
+###################################
+if [ "$chooseacction" = "thaythongtindangnhapmacdinh" ]; then
+echo "========================================================================="
+echo "Use this function to change default username and password."
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the New Username [ENTER]: " 
+read username
+if [ "$username" = "" ]; then
+clear
+echo "========================================================================="
+echo "Username can not be empty."
+vpssim
+exit
+fi
+checkpass="^[a-zA-Z0-9_][-a-zA-Z0-9_]{0,61}[a-zA-Z0-9_]$";
+if [[ ! "$username" =~ $checkpass ]]; then
+clear
+echo "========================================================================="
+echo "You must use only numbers, letters to set Username !"
+vpssim
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the password [ENTER]:  "
+read matkhau
+if [ "$matkhau" = "" ]; then
+clear
+echo "========================================================================="
+echo "Password can not be empty."
+vpssim
+exit
+fi
+checkpass="^[a-zA-Z0-9_][-a-zA-Z0-9_]{0,61}[a-zA-Z0-9_]$";
+if [[ ! "$matkhau" =~ $checkpass ]]; then
+clear
+echo "========================================================================="
+echo "You must use only numbers, letters to set password !"
+vpssim
+exit
+fi
+
+echo "-------------------------------------------------------------------------"
+echo "Username and password you typed in: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $username | Password: $matkhau"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will change default username and password to new infomation. "
+echo "-------------------------------------------------------------------------"
+echo "please wait ...."; sleep 3
+rm -rf /etc/nginx/.htpasswd
+htpasswd.py -c -b /etc/nginx/.htpasswd $username $matkhau
+chmod -R 644 /etc/nginx/.htpasswd
+cat > "/etc/vpssim/pwprotect.default" <<END
+userdefault="$username"
+passdefault="$matkhau"
+END
+cat > "/etc/vpssim/defaulpassword.php" <<END
+<?php
+define('ADMIN_USERNAME','$username');   // Admin Username
+define('ADMIN_PASSWORD','$matkhau');    // Admin Password
+?>
+END
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else
+systemctl reload nginx
+fi
+clear
+echo "========================================================================="
+echo "Change the default login info finished"
+echo "-------------------------------------------------------------------------"
+echo "Username: $username | Password: $matkhau"
+vpssim
+exit
+else 
+clear && vpssim
+fi
+fi
+
+echo "========================================================================="
+echo "Use this function to create default User & Password for protection folder"
+echo "-------------------------------------------------------------------------"
+echo "File Manager, phpMyAdmin, NetData, Net2FTP, Backup Files ..."
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the Username [ENTER]: " 
+read username
+if [ "$username" = "" ]; then
+clear
+echo "========================================================================="
+echo "Username can not be empty"
+vpssim
+exit
+fi
+checkpass="^[a-zA-Z0-9_][-a-zA-Z0-9_]{0,61}[a-zA-Z0-9_]$";
+if [[ ! "$username" =~ $checkpass ]]; then
+clear
+echo "========================================================================="
+echo "You must use only numbers, letters to set Username !"
+vpssim
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the password [ENTER]:  "
+read matkhau
+if [ "$matkhau" = "" ]; then
+clear
+echo "========================================================================="
+echo "Password can not be empty"
+vpssim
+exit
+fi
+checkpass="^[a-zA-Z0-9_][-a-zA-Z0-9_]{0,61}[a-zA-Z0-9_]$";
+if [[ ! "$matkhau" =~ $checkpass ]]; then
+clear
+echo "========================================================================="
+echo "You must use only numbers, letters to set password !"
+vpssim
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo "Username and password you typed in: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $username | Password: $matkhau"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will config using this username and password for default login info"
+echo "-------------------------------------------------------------------------"
+echo "please wait ...."; sleep 3
+cat > "/etc/vpssim/pwprotect.default" <<END
+userdefault="$username"
+passdefault="$matkhau"
+END
+cat > "/etc/vpssim/defaulpassword.php" <<END
+<?php
+define('ADMIN_USERNAME','$username');   // Admin Username
+define('ADMIN_PASSWORD','$matkhau');    // Admin Password
+?>
+END
+rm -rf /etc/nginx/.htpasswd
+htpasswd.py -c -b /etc/nginx/.htpasswd $username $matkhau
+chmod -R 644 /etc/nginx/.htpasswd
+clear
+echo "========================================================================="
+echo "Created Username and Password for default login finished."
+echo "-------------------------------------------------------------------------"
+echo "Username: $username | Password: $matkhau"
+vpssim
+exit

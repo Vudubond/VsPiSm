@@ -1,0 +1,24 @@
+#!/bin/bash
+. /home/vpssim.conf
+if [ -f /home/$mainsite/private_html/backup/home/*.zip ]; then
+find /home/$mainsite/private_html/backup/home/ -type f -exec basename {} \;  > /etc/vpssim/linkbackup
+filename=`cat /etc/vpssim/linkbackup`
+echo "-------------------------------------------------------------------------"
+echo "Please wait..."
+sleep 1
+clear
+echo "========================================================================="
+echo "Discovered the backup of foler Home on server"
+echo "-------------------------------------------------------------------------"
+echo "Link download backup: "
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/backup/home/$filename"
+/etc/vpssim/menu/vpssim-sao-luu
+rm -rf /etc/vpssim/linkbackup
+else
+clear
+echo "========================================================================="
+echo "You did not create the backup folder Home yet!"
+/etc/vpssim/menu/vpssim-sao-luu
+exit
+fi

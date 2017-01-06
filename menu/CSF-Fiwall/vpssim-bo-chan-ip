@@ -1,0 +1,81 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+
+if [ -f /etc/csf/csf.conf ]; then
+if [ "$(cat /etc/csf/csf.deny | awk 'NR==1 {print $1}')" == "" ]; then
+clear
+echo "========================================================================="
+echo "There are no IP blocked by CSF Firewall."
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi
+fi
+
+if [ -f /etc/csf/csf.conf ]; then
+echo "========================================================================="
+test_csf=$(csf -v | awk 'NR==1 {print $NF}')
+if [ "$test_csf" == "enable" ]; then
+echo "This function will enable CSF firewall if you are disabling it on VPS"
+echo "-------------------------------------------------------------------------" 
+fi
+echo -n "Type IP you want to unblock [ENTER]: " 
+read ipbochan
+
+if [ "$ipbochan" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please fill accurately"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi
+if [ "$test_csf" == "enable" ]; then
+csf -e
+fi
+
+if [ ! "$(ping -c 1 $ipbochan | tail -n +1 | head -1 | awk 'NR==1 {print $1}')" == "PING" ]; then
+clear
+echo "========================================================================="
+echo "$ipbochan is not a valid IP/CIDR ! "
+echo "-------------------------------------------------------------------------"
+echo "Please try again."
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi
+
+if [ "$(grep "$ipbochan" /etc/csf/csf.deny | awk '{print $4}')" == "" ]; then
+clear
+echo "========================================================================="
+echo "IP: $ipbochan not blocked by CSF Firewall."
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi
+
+csf -dr "$ipbochan"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-re-start-khoi-dong-lai-csf-lfd
+clear
+echo "========================================================================="
+echo "IP: $ipbochan now can access to you VPS/Server!"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+else
+echo "========================================================================= "
+echo "This funcion run with CSF Firewall"
+echo "-------------------------------------------------------------------------"
+echo "CSF Firewall is not installed ! "
+echo "-------------------------------------------------------------------------"
+read -r -p "Do you want to install CSF Firewall on this VPS [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+/etc/vpssim/menu/CSF-Fiwall/vpssim-cai-dat-csf-csf
+clear
+echo "========================================================================= "
+echo "Successfully installed and configed CSF Firewall"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+;;
+esac
+clear
+echo "========================================================================= "
+echo "You cancel install CSF Firewall ! "
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi

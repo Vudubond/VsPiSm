@@ -1,0 +1,45 @@
+#!/bin/bash
+. /home/vpssim.conf
+echo "========================================================================="
+echo -n "Type in domain [ENTER]: " 
+read domainlaycsr
+if [ "$domainlaycsr" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, Please fill accurately"
+/etc/vpssim/menu/vpssim-tao-ssl-menu
+exit
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$domainlaycsr" =~ $kiemtradomain3 ]]; then
+	domainlaycsr=`echo $domainlaycsr | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$domainlaycsr maybe not a domain name!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-tao-ssl-menu
+exit
+fi 
+
+if [ -f /etc/nginx/ssl/$domainlaycsr/$domainlaycsr.csr ]; then
+    echo "Please wait...";sleep 1 
+\cp -uf /etc/nginx/ssl/$domainlaycsr/$domainlaycsr.csr /home/$mainsite/private_html/
+clear
+echo "========================================================================= "
+echo "Link download $domainlaycsr.csr:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/$domainlaycsr.csr"
+echo "-------------------------------------------------------------------------"
+echo "Link view $domainlaycsr.conf example: "
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/$domainlaycsr.conf.txt"
+/etc/vpssim/menu/vpssim-tao-ssl-menu
+exit
+fi
+clear
+echo "========================================================================= "
+echo "You have not created $domainlaycsr.csr on VPS yet !"
+/etc/vpssim/menu/vpssim-tao-ssl-menu
+exit
+fi

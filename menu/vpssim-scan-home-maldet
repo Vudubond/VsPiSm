@@ -1,0 +1,40 @@
+#!/bin/bash 
+. /home/vpssim.conf
+if [ ! -f /usr/local/maldetect/conf.maldet ]; then
+clear
+echo "========================================================================= "
+echo "LMD with ClamAV is not existed in VPS "
+echo "-------------------------------------------------------------------------"
+echo "Please install LMD first !"
+/etc/vpssim/menu/vpssim-maldet-menu
+exit
+fi
+echo "========================================================================= "
+echo "Scan all websites will take a long time "
+echo "-------------------------------------------------------------------------"
+echo "To scan faster, you should choose a website needed to scan"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to scan all websites ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY])
+    echo "-------------------------------------------------------------------------"
+echo "Please wait...";sleep 1 
+    clear 
+echo "========================================================================= "
+maldet -a /home
+name123=$(cat /usr/local/maldetect/sess/session.last)
+rm -rf /tmp/maldet.txt
+cp /usr/local/maldetect/sess/session.$name123 /tmp/maldet-home.txt
+sed -i '$d' /tmp/maldet-home.txt && sed -i '$d' /tmp/maldet-home.txt && sed -i '1d' /tmp/maldet-home.txt && sed -i '1d' /tmp/maldet-home.txt && sed -i '1d' /tmp/maldet-home.txt
+clear
+echo "========================================================================="
+echo "Report for scan on: $(maldet --report list | grep SCAN | awk 'NR==1 {print $1,$2,$3}')"
+echo "-------------------------------------------------------------------------"
+cat /tmp/maldet-home.txt | grep '\S'
+/etc/vpssim/menu/vpssim-maldet-menu
+;;
+esac
+clear
+echo "========================================================================= "
+echo "Canlce scan all websites ! "
+/etc/vpssim/menu/vpssim-maldet-menu

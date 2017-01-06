@@ -1,0 +1,34 @@
+#!/bin/bash
+if [ ! -f /etc/cron.d/vpssim.code.cron ]; then
+touch /etc/cron.d/vpssim.code.cron
+fi
+prompt="Type in your choice (10-Exit):"
+options=( "Add Website" "Add Park & Redirect Domain" "Add website + Wordpress (Auto Setup)" "Add Website + Forum Code (Auto Setup)" "Add Website + Opencart (Auto Setup)" "Add website + Wordpress (Download Code)" "Add Website + Joomla (Download Code)" "Add website + Drupal (Download Code)" "List Website Running On Server" "Exit")
+printf "=========================================================================\n"
+printf "               VPSSIM - Manage VPS/Server by VPSSIM.COM \n"
+printf "=========================================================================\n"
+printf "                        Add Website To Server \n"
+printf "=========================================================================\n"
+
+PS3="$prompt"
+select opt in "${options[@]}" ; do 
+
+    case "$REPLY" in
+    1) /etc/vpssim/menu/vpssim-them-website;;
+    2) /etc/vpssim/menu/vpssim-them-redirect-park-domain-menu;;
+    3) /etc/vpssim/menu/vpssim-them-website-auto-setup-wordpress-menu;;
+	4) /etc/vpssim/menu/vpssim-them-website-forum-code-menu;;
+    5) /etc/vpssim/menu/vpssim-them-website-auto-setup-opencart-menu;;
+    6) /etc/vpssim/menu/vpssim-them-website-wp;;
+    7) /etc/vpssim/menu/vpssim-them-website-joomla;;
+    8) /etc/vpssim/menu/vpssim-them-website-drupal;;
+    9) /etc/vpssim/menu/vpssim-list-website-tren-vps;; 
+    10) clear && vpssim;;
+        *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+
+    esac
+
+done
+
+
+

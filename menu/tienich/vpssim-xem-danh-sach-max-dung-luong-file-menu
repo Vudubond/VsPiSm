@@ -1,0 +1,16 @@
+#!/bin/bash
+printf "=========================================================================\n"
+prompt="Type in your choice (3-Exit):"
+options=("Largest Files And Folder In Domain's Folder" "Largest Files And Folder In Home Folder")
+PS3="$prompt"
+select opt in "${options[@]}" "Exit"; do 
+    case "$REPLY" in
+    1) /etc/vpssim/menu/tienich/vpssim-xem-danh-sach-max-dung-luong-file-domain;;
+    2) /etc/vpssim/menu/tienich/vpssim-danh-sach-max-dung-luong-file-folder-home;;
+$(( ${#options[@]}+1 )) ) echo "";  clear && /etc/vpssim/menu/vpssim-tien-ich;;
+     *) echo "You typed wrong, Please type in the ordinal number on the list !";continue;;
+
+    esac
+done
+
+

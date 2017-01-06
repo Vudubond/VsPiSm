@@ -1,0 +1,86 @@
+#!/bin/bash
+
+. /home/vpssim.conf
+if [ ! -f /etc/vpssim/uploadsite ]; then
+clear
+echo "========================================================================="
+echo "You have not installed File Manager for VPS !"
+/etc/vpssim/menu/vpssim-web-upload-menu
+exit
+fi
+uploadsite=$(cat /etc/vpssim/uploadsite)
+if [ -f /home/$uploadsite/public_html/index.php ]; then 
+echo "========================================================================="
+echo "Current File Manager is ENABLE"
+echo "========================================================================="
+read -r -p "Do you want to DISABLE it ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "Please wait....";sleep 1
+	mv /home/$uploadsite/public_html/index.php /home/$uploadsite/public_html/index.bak
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+service php-fpm restart
+else 
+systemctl restart nginx.service
+systemctl restart php-fpm.service
+fi
+	rm -f /home/$uploadsite/public_html/index.html
+    cat > "/home/$uploadsite/public_html/index.html" <<END
+<!DOCTYPE html>
+<html id="VPSSIM" lang="en-US" dir="LTR" class="Public Cute Pig" xmlns:fb="http://www.facebook.com/2008/fbml">
+<head>
+<meta charset="utf-8"/>
+<title>Cute Pig !!!</title>
+</head>
+<body>
+<center><img src="https://vpssim.com/script/vpssim/pig.jpg"></center><br><br>
+<center>What do you want?</center>
+</body>
+</html>
+END
+clear
+echo "========================================================================="
+echo "File Manager is DISABLE successfully!"
+/etc/vpssim/menu/vpssim-web-upload-menu
+        ;;
+    *)
+clear
+ echo "========================================================================="
+echo "You chose NO  !"
+/etc/vpssim/menu/vpssim-web-upload-menu
+        ;;
+esac
+exit
+fi
+echo "========================================================================="
+echo "Current File Manager is DISABLE"
+echo "========================================================================="
+read -r -p "Do you want to ENABLE it ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "Please wait....";sleep 1
+	mv /home/$uploadsite/public_html/index.bak /home/$uploadsite/public_html/index.php
+	rm -f /home/$uploadsite/public_html/index.html
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+service php-fpm restart
+else 
+systemctl restart nginx.service
+systemctl restart php-fpm.service
+fi
+clear
+        echo "========================================================================="
+        echo "File Manager is ENABLE successfully !"
+/etc/vpssim/menu/vpssim-web-upload-menu
+        ;;
+    *)
+               clear
+ echo "========================================================================="
+echo "You choose NO!"
+/etc/vpssim/menu/vpssim-web-upload-menu
+
+        ;;
+esac
+exit
+fi

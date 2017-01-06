@@ -1,0 +1,429 @@
+#!/bin/bash
+. /home/vpssim.conf
+echo "========================================================================="
+echo "This function will create Vhost for Sub-domain after you "
+echo "-------------------------------------------------------------------------"
+echo "created Subdomain in Wordpress Multisite's WP-ADMIN"
+echo "-------------------------------------------------------------------------"   
+echo -n "Type in website: " 
+read website
+website=`echo $website | tr '[A-Z]' '[a-z]'`
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please type in accurately! "
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a domain name !"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "Can not discover $website"
+echo "-------------------------------------------------------------------------"
+echo "PLease try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+
+if [ -f /home/$website/public_html/wp-config-sample.php ]; then
+if [ ! -f /home/$website/public_html/wp-config.php ]; then
+clear
+echo "========================================================================="
+echo "$website use wordpress code but not install yet!"
+echo "-------------------------------------------------------------------------"
+echo "Please setup wordpress code then try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+fi
+
+if [ ! -f /home/$website/public_html/wp-config.php ]; then
+clear
+echo "========================================================================="
+echo "$website is not wordpress blog !"
+echo "-------------------------------------------------------------------------"
+echo "PLease try again !."
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+
+
+if [ ! "$(grep "define( 'SUBDOMAIN_INSTALL', false );" /home/$website/public_html/wp-config.php)" == "" ]; then
+clear
+echo "========================================================================="
+echo "$website setup Sub-directories Wordpress Multisite"
+echo "-------------------------------------------------------------------------"
+echo "You can not create Subdomain for $website"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+
+
+if [ "$(grep "WP_ALLOW_MULTISITE" /home/$website/public_html/wp-config.php)" == "" ]; then
+clear
+echo "========================================================================="
+echo "$website has not setup Wordpress Multisite yet"
+echo "-------------------------------------------------------------------------"
+echo "You need setup Wordpress Multisite first !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM checking ... "
+sleep 1;
+echo "========================================================================="
+echo "Discovered $website in system"
+echo "-------------------------------------------------------------------------"
+echo "$website has already setup Sub-domain Wordpress Multisite "
+echo "========================================================================="
+echo "CREATE VHOST FOR SUBDOMAIN"
+echo "========================================================================="
+echo "Type in the Sub name which you created in $website wp-admin. "
+echo "-------------------------------------------------------------------------"
+echo "Example: The subdomain is hostingaz.vpssim.com, Type: hostingaz"
+echo "========================================================================="
+echo -n "Type in the sub: " 
+read subdomain
+if [ "$subdomain" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please type in accurately! "
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+
+kiemtradata="^[a-zA-Z0-9][-a-zA-Z0-9]{0,61}[a-zA-Z0-9]$";
+if [[ ! "$subdomain" =~ $kiemtradata ]]; then
+	subdomain=`echo $subdomain | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$subdomain wrong ! "
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi 
+
+
+if [ -f /etc/nginx/conf.d/$subdomain.$website.conf ]; then
+clear
+echo "========================================================================="
+echo "$subdomain.$website already created in system "
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+websiteto=`echo $website | tr '[A-Z]' '[a-z]'`
+echo "========================================================================="
+echo "VPSSIM will config Vhost belong to the cache plugin your website use"
+echo "========================================================================="
+echo "CHOOSE THE CACHE PLUGIN $websiteto USING"
+echo "========================================================================="
+
+prompt="Type in your choice: "
+options=( "WP Super Cache" "Redis Cache" "W3 Total Cache" "Others")
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+
+    case "$REPLY" in
+    1) vhostconfig="supercache"; break;;
+    2) vhostconfig="redis"; break;;
+    3) vhostconfig="wptotalcache"; break;;
+    4) vhostconfig="normal"; break;;  
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+###################################
+#Redis Cache
+###################################
+if [ "$vhostconfig" = "redis" ]; then
+	cat > "/etc/nginx/conf.d/$subdomain.$website.conf" <<END
+server {
+	    server_name www.$subdomain.$website;
+	    rewrite ^(.*) http://$subdomain.$website\$1 permanent;
+    	}
+server {
+	    listen   80;
+
+    	access_log off;
+    	error_log off;
+    	# error_log /home/$website/logs/error.log;
+    	root /home/$website/public_html;
+include /etc/nginx/conf/ddos2.conf;
+	index index.php index.html index.htm;
+    	server_name $subdomain.$website;
+
+#///////////////////////////////////////////////////////
+#You can Only 1 rule (AAA or BBB or CCC or DDD)
+#///////////////////////////////////////////////////////
+#Run all the websites,if you use your rule, comment or delete the line below (AAA)
+include /etc/nginx/conf/all.conf;
+
+#If you use your rule, comment or delete above line, and  Uncoment 3 lines belows and set your rule within it.. (BBB)
+#location / {
+#Uncomment 3 lines and set your rules here!
+#}
+
+# Rule cho wordpress + Plugin wp super cache. (CCC)
+#include /etc/nginx/conf/supercache.conf;  
+
+# Rule cho wordpress + Plugin W3 Total Cache. (DDD)
+#include /etc/nginx/conf/w3total.conf;  
+
+#Do not delete the bottom line, if you delete nginx pagespeed function will not work!!
+#include /etc/nginx/ngx_pagespeed.conf;
+
+#security, sql injection Propeller ....(uncoment if you want to use). Because some website plugins do not run with this config, so VPSSIM to turn off default.
+#include /etc/nginx/conf/block.conf;
+ 
+ 
+    	location ~ \.php$ {
+		fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        include /etc/nginx/fastcgi_params;
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+		fastcgi_connect_timeout 60;
+		fastcgi_send_timeout 180;
+		fastcgi_read_timeout 180;
+		fastcgi_buffer_size 256k;
+		fastcgi_buffers 4 256k;
+		fastcgi_busy_buffers_size 256k;
+		fastcgi_temp_file_write_size 256k;
+		fastcgi_intercept_errors on;
+        fastcgi_param SCRIPT_FILENAME /home/$website/public_html\$fastcgi_script_name;
+    	}
+	
+include /etc/nginx/conf/staticfiles.conf;
+#include /etc/nginx/conf/phpstatus.conf;
+include /etc/nginx/conf/drop.conf;
+#include /etc/nginx/conf/errorpage.conf;
+    }
+END
+###################################
+#Super Cache
+###################################
+elif [ "$vhostconfig" = "supercache" ]; then
+	cat > "/etc/nginx/conf.d/$subdomain.$website.conf" <<END
+server {
+	    server_name www.$subdomain.$website;
+	    rewrite ^(.*) http://$subdomain.$website\$1 permanent;
+    	}
+server {
+	    listen   80;
+
+    	access_log off;
+    	error_log off;
+    	# error_log /home/$website/logs/error.log;
+    	root /home/$website/public_html;
+include /etc/nginx/conf/ddos2.conf;
+	index index.php index.html index.htm;
+    	server_name $subdomain.$website;
+
+#///////////////////////////////////////////////////////
+#You can Only 1 rule (AAA or BBB or CCC or DDD)
+#///////////////////////////////////////////////////////
+#Run all the websites,if you use your rule, comment or delete the line below (AAA)
+#include /etc/nginx/conf/all.conf;
+
+#If you use your rule, comment or delete above line, and  Uncoment 3 lines belows and set your rule within it.. (BBB)
+#location / {
+#Uncomment 3 lines and set your rules here!
+#}
+
+# Rule cho wordpress + Plugin wp super cache. (CCC)
+include /etc/nginx/conf/supercache.conf;  
+
+# Rule cho wordpress + Plugin W3 Total Cache. (DDD)
+#include /etc/nginx/conf/w3total.conf;  
+
+#Do not delete the bottom line, if you delete nginx pagespeed function will not work!!
+#include /etc/nginx/ngx_pagespeed.conf;
+
+#security, sql injection Propeller ....(uncoment if you want to use). Because some website plugins do not run with this config, so VPSSIM to turn off default.
+#include /etc/nginx/conf/block.conf;
+ 
+ 
+    	location ~ \.php$ {
+		fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        include /etc/nginx/fastcgi_params;
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+		fastcgi_connect_timeout 60;
+		fastcgi_send_timeout 180;
+		fastcgi_read_timeout 180;
+		fastcgi_buffer_size 256k;
+		fastcgi_buffers 4 256k;
+		fastcgi_busy_buffers_size 256k;
+		fastcgi_temp_file_write_size 256k;
+		fastcgi_intercept_errors on;
+        fastcgi_param SCRIPT_FILENAME /home/$website/public_html\$fastcgi_script_name;
+    	}
+	
+include /etc/nginx/conf/staticfiles.conf;
+#include /etc/nginx/conf/phpstatus.conf;
+include /etc/nginx/conf/drop.conf;
+#include /etc/nginx/conf/errorpage.conf;
+    }
+END
+###################################
+#W3 Total Cache
+###################################
+elif [ "$vhostconfig" = "wptotalcache" ]; then
+
+	cat > "/etc/nginx/conf.d/$subdomain.$website.conf" <<END
+server {
+	    server_name www.$subdomain.$website;
+	    rewrite ^(.*) http://$subdomain.$website\$1 permanent;
+    	}
+server {
+	    listen   80;
+
+    	access_log off;
+    	error_log off;
+    	# error_log /home/$website/logs/error.log;
+    	root /home/$website/public_html;
+include /etc/nginx/conf/ddos2.conf;
+	index index.php index.html index.htm;
+    	server_name $subdomain.$website;
+
+#///////////////////////////////////////////////////////
+#You can Only 1 rule (AAA or BBB or CCC or DDD)
+#///////////////////////////////////////////////////////
+#Run all the websites,if you use your rule, comment or delete the line below (AAA)
+#include /etc/nginx/conf/all.conf;
+
+#If you use your rule, comment or delete above line, and  Uncoment 3 lines belows and set your rule within it.. (BBB)
+#location / {
+#Uncomment 3 lines and set your rules here!
+#}
+
+# Rule cho wordpress + Plugin wp super cache. (CCC)
+#include /etc/nginx/conf/supercache.conf;  
+
+# Rule cho wordpress + Plugin W3 Total Cache. (DDD)
+include /etc/nginx/conf/w3total.conf;  
+
+#Do not delete the bottom line, if you delete nginx pagespeed function will not work!!
+#include /etc/nginx/ngx_pagespeed.conf;
+
+#security, sql injection Propeller ....(uncoment if you want to use). Because some website plugins do not run with this config, so VPSSIM to turn off default.
+#include /etc/nginx/conf/block.conf;
+ 
+ 
+    	location ~ \.php$ {
+		fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        include /etc/nginx/fastcgi_params;
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+		fastcgi_connect_timeout 60;
+		fastcgi_send_timeout 180;
+		fastcgi_read_timeout 180;
+		fastcgi_buffer_size 256k;
+		fastcgi_buffers 4 256k;
+		fastcgi_busy_buffers_size 256k;
+		fastcgi_temp_file_write_size 256k;
+		fastcgi_intercept_errors on;
+        fastcgi_param SCRIPT_FILENAME /home/$website/public_html\$fastcgi_script_name;
+    	}
+    	
+include /etc/nginx/conf/staticfiles.conf;
+#include /etc/nginx/conf/phpstatus.conf;
+include /etc/nginx/conf/drop.conf;
+#include /etc/nginx/conf/errorpage.conf;
+    }
+END
+
+else 
+cat > "/etc/nginx/conf.d/$subdomain.$website.conf" <<END
+server {
+	    server_name www.$subdomain.$website;
+	    rewrite ^(.*) http://$subdomain.$website\$1 permanent;
+    	}
+server {
+	    listen   80;
+
+    	access_log off;
+    	error_log off;
+    	# error_log /home/$website/logs/error.log;
+    	root /home/$website/public_html;
+include /etc/nginx/conf/ddos2.conf;
+	index index.php index.html index.htm;
+    	server_name $subdomain.$website;
+
+#///////////////////////////////////////////////////////
+#You can Only 1 rule (AAA or BBB or CCC or DDD)
+#///////////////////////////////////////////////////////
+#Run all the websites,if you use your rule, comment or delete the line below (AAA)
+include /etc/nginx/conf/all.conf;
+
+#If you use your rule, comment or delete above line, and  Uncoment 3 lines belows and set your rule within it.. (BBB)
+#location / {
+#Uncomment 3 lines and set your rules here!
+#}
+
+# Rule cho wordpress + Plugin wp super cache. (CCC)
+#include /etc/nginx/conf/supercache.conf;  
+
+# Rule cho wordpress + Plugin W3 Total Cache. (DDD)
+#include /etc/nginx/conf/w3total.conf;  
+
+#Do not delete the bottom line, if you delete nginx pagespeed function will not work!!
+#include /etc/nginx/ngx_pagespeed.conf;
+
+#security, sql injection Propeller ....(uncoment if you want to use). Because some website plugins do not run with this config, so VPSSIM to turn off default.
+#include /etc/nginx/conf/block.conf;
+ 
+ 
+    	location ~ \.php$ {
+		fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        include /etc/nginx/fastcgi_params;
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+		fastcgi_connect_timeout 60;
+		fastcgi_send_timeout 180;
+		fastcgi_read_timeout 180;
+		fastcgi_buffer_size 256k;
+		fastcgi_buffers 4 256k;
+		fastcgi_busy_buffers_size 256k;
+		fastcgi_temp_file_write_size 256k;
+		fastcgi_intercept_errors on;
+        fastcgi_param SCRIPT_FILENAME /home/$website/public_html\$fastcgi_script_name;
+    	}
+	
+include /etc/nginx/conf/staticfiles.conf;
+#include /etc/nginx/conf/phpstatus.conf;
+include /etc/nginx/conf/drop.conf;
+#include /etc/nginx/conf/errorpage.conf;
+    }
+END
+fi
+
+ 
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+else
+systemctl restart nginx.service
+fi
+clear
+echo "========================================================================="
+echo "Create Vhost for $subdomain.$website successfully ! "
+echo "-------------------------------------------------------------------------"
+echo "Go to $subdomain.$website to check! if config wrong,"
+echo "-------------------------------------------------------------------------"
+echo "Delete $subdomain.$website.conf in /etc/nginx/conf.d"
+echo "-------------------------------------------------------------------------"
+echo "and create vhost again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+

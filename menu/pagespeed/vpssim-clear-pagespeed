@@ -1,0 +1,25 @@
+#!/bin/sh
+. /home/vpssim.conf
+rm -rf /tmp/*hostingaz*
+ls /etc/nginx/conf.d > /tmp/vpssim-websitelist
+cat > "/tmp/vpssim-replace" <<END
+sed -i '/$mainsite/d' /tmp/vpssim-websitelist
+END
+chmod +x /tmp/vpssim-replace
+/tmp/vpssim-replace
+checkwebsitenumbers=$(cat /tmp/vpssim-websitelist | wc -l)
+if [ "$checkwebsitenumbers" == "0" ]; then
+rm -rf /tmp/*vpssim*
+rm -rf /tmp/*hostingaz*
+clear
+echo "========================================================================="
+echo "You have not added any  website to server yet"
+echo "-------------------------------------------------------------------------"
+echo "Please add a new website to server before use this function."
+/etc/vpssim/menu/pagespeed/vpssim-pagespeed-menu
+fi
+touch /var/cache/ngx_pagespeed/cache.flush
+clear
+echo "========================================================================= "
+echo "Successfully clear Pagespeed cache"
+/etc/vpssim/menu/pagespeed/vpssim-pagespeed-menu

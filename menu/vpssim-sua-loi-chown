@@ -1,0 +1,22 @@
+#!/bin/bash
+clear
+printf "=========================================================================\n"
+printf "               VPSSIM - Manage VPS/Server by VPSSIM.COM \n"
+printf "=========================================================================\n"
+printf "                         Fix error chmod & chown                               \n"
+printf "=========================================================================\n"
+printf "You must use this function to chmod after upload code website to VPS !\n"
+printf "                          \n"
+printf "This function fixes : Can't Write because of wrong chmod, chown  \n"
+printf "Unable to install fixes , upgrade plugins , themes\n"
+printf "FIX asking FTP password when update plugins, themes \n"
+printf "All public_html folder will be chmod 755 after Fixed\n"
+printf "=========================================================================\n"
+read -p "Press [Enter] to fix error ..."
+chown -R nginx:nginx /home
+clear
+echo "========================================================================="
+echo "Chmod & Chown 's error has been fixed "
+echo "-------------------------------------------------------------------------"
+echo "You can visit your website to check."
+/etc/vpssim/menu/vpssim-tien-ich

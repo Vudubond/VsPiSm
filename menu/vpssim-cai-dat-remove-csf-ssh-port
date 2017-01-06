@@ -1,0 +1,17 @@
+#!/bin/bash
+. /home/vpssim.conf
+if [ -f /etc/csf/csf.conf ]; then
+clear
+echo "========================================================================="
+echo "CSF Firewall installed on your VPS"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will remove CSF then resetup CSF to update new SSH port"
+echo "========================================================================="
+echo "Please wait..."
+sleep 5
+yes | cp -rf /etc/csf/csf.conf /etc/vpssim/csf.conf_bak
+cd /etc/csf
+sh uninstall.sh
+cd
+/etc/vpssim/menu/vpssim-cai-csf-firewall-cai-dat-CSF-FIREWALL
+fi

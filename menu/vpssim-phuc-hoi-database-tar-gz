@@ -1,0 +1,304 @@
+#!/bin/sh
+. /home/vpssim.conf
+echo "========================================================================="
+echo "The Database you want to restore must be exiting in the system ! "
+echo "========================================================================="
+echo -n "Type in the database you want to restore: " 
+read dataname
+if [ "$dataname" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please type in accurately!  !"
+/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+exit
+fi
+if [ ! -f /var/lib/mysql/$dataname/db.opt ]; then
+clear
+echo "========================================================================="
+echo "Did not find out $dataname on server  "
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo -n "Type in website you want restore database: "
+read website
+website=`echo $website | tr '[A-Z]' '[a-z]'`
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please type in accurately! !"
+/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+exit
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a domain name !"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+exit
+fi
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "Can not discover $website !"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+exit
+fi
+date -r /var/lib/mysql/$dataname +%H%M%S> /tmp/vpssim1
+if [ ! -f /home/$mainsite/private_html/backup/$dataname/*.gz ]; then
+randomcode=`date |md5sum |cut -c '1-13'`
+	if [ -f /home/$website/public_html/VPSSIM-DATABASE.tar.gz ]; then
+	echo "-------------------------------------------------------------------------"
+	echo "Discover Backup file VPSSIM-DATABASE.tar.gz"
+	echo "-------------------------------------------------------------------------"
+	echo "Prepare to Restore .... "
+	echo "-------------------------------------------------------------------------"
+	sleep 2
+	gunzip < /home/$website/public_html/VPSSIM-DATABASE.tar.gz | mysql -u root -p$mariadbpass $dataname
+	date -r /var/lib/mysql/$dataname +%H%M%S> /tmp/vpssim2
+	check1=`cat /tmp/vpssim1`
+	check2=`cat /tmp/vpssim2`
+		if [ "$check1" == "$check2" ]; then
+		rm -rf /tmp/vpssim1
+		rm -rf /tmp/vpssim2
+		clear
+		echo "========================================================================="
+		echo "Restore database $dataname failed "
+		echo "-------------------------------------------------------------------------"
+		echo "Please check Backup file and try again !"
+		/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+		else	
+		rm -rf /tmp/vpssim1
+		rm -rf /tmp/vpssim2
+		mv /home/$website/public_html/VPSSIM-DATABASE.tar.gz /home/$website/public_html/VPSSIM-DATABASE.tar.gz.$randomcode
+		clear
+		echo "========================================================================="
+		echo "Restore database $dataname successfully !"
+		echo "-------------------------------------------------------------------------"
+		echo "Backup file renamed to VPSSIM-DATABASE.tar.gz.$randomcode"
+		/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+		exit
+		fi
+	else
+	clear
+	echo "========================================================================="
+	echo "HOW TO RESTORE"
+	echo "========================================================================="
+	echo "This function only restore database with Backup file in .TAR.GZ format"
+	echo "-------------------------------------------------------------------------"
+	echo "Rename Backup file to VPSSIM-DATABASE.tar.gz then upload to: "
+	echo "-------------------------------------------------------------------------"
+	echo "/home/$website/public_html/"
+	echo "========================================================================="
+	read -p "When Upload finish. Press [Enter] to Restore ..."
+	echo "-------------------------------------------------------------------------"
+	echo "VPSSIM finding Backup file .... "
+	echo "-------------------------------------------------------------------------"
+	sleep 4
+		if [ -f /home/$website/public_html/VPSSIM-DATABASE.tar.gz ]; then
+		echo "-------------------------------------------------------------------------"
+	echo "Discover Backup file VPSSIM-DATABASE.tar.gz"
+	echo "-------------------------------------------------------------------------"
+	echo "Prepare to restore .... "
+	echo "-------------------------------------------------------------------------"
+	sleep 2
+	gunzip < /home/$website/public_html/VPSSIM-DATABASE.tar.gz | mysql -u root -p$mariadbpass $dataname
+	date -r /var/lib/mysql/$dataname +%H%M%S> /tmp/vpssim2
+	check1=`cat /tmp/vpssim1`
+	check2=`cat /tmp/vpssim2`
+		if [ "$check1" == "$check2" ]; then
+		rm -rf /tmp/vpssim1
+		rm -rf /tmp/vpssim2
+		clear
+		echo "========================================================================="
+		echo "Restore database $dataname failed "
+		echo "-------------------------------------------------------------------------"
+		echo "Please check Backup file and try again !"
+		/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+		else	
+		rm -rf /tmp/vpssim1
+		rm -rf /tmp/vpssim2
+		mv /home/$website/public_html/VPSSIM-DATABASE.tar.gz /home/$website/public_html/VPSSIM-DATABASE.tar.gz.$randomcode
+		clear
+		echo "========================================================================="
+		echo "Restore database $dataname successfully !"
+		echo "-------------------------------------------------------------------------"
+		echo "Backup file renamed to VPSSIM-DATABASE.tar.gz.$randomcode"
+		/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+		exit
+		fi
+	else
+	clear
+		echo "========================================================================="
+		echo "Can not discover VPSSIM-DATABASE.tar.gz !"
+		echo "-------------------------------------------------------------------------"
+		echo "Please upload Backup file to server then try again"
+		/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+		exit
+		fi
+		fi
+
+else
+find /home/$mainsite/private_html/backup/$dataname -type f -exec basename {} \;  > /tmp/backupname
+filename=`cat /tmp/backupname`
+rm -rf /tmp/backupname
+echo "========================================================================="
+echo "Discover the backup of $dataname: $filename"
+echo "-------------------------------------------------------------------------"
+echo "Backup file created on: $(date -r /home/$mainsite/private_html/backup/$dataname/$filename +%H:%M/%F)"
+echo "========================================================================="
+prompt="Type in your choice: "
+options=( "Restore database from file backup $filename" "Restore database from other Backup file" "Cancel")
+printf "CHOOSE HOW TO RESTORE DATABASE\n"
+printf "=========================================================================\n"
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+
+    case "$REPLY" in
+    1) luachonphuchoi="phuchoitufilebackup"; break;;
+    2) luachonphuchoi="uploadsaudophuchoi"; break;;
+    3) luachonphuchoi="cancel"; break;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+###################################
+#phuchoitufilebackup
+###################################
+if [ "$luachonphuchoi" = "phuchoitufilebackup" ]; then
+echo "--------------------------------------------------------------------------"
+echo "Please wait ...."
+echo "--------------------------------------------------------------------------"
+echo "VPSSIM dang Restore $dataname.........."
+gunzip < /home/$mainsite/private_html/backup/$dataname/$filename | mysql -u root -p$mariadbpass $dataname
+date -r /var/lib/mysql/$dataname +%H%M%S> /tmp/vpssim2
+check1=`cat /tmp/vpssim1`
+check2=`cat /tmp/vpssim2`
+	if [ "$check1" == "$check2" ]; then
+	rm -rf /tmp/vpssim1
+	rm -rf /tmp/vpssim2
+	clear
+	echo "========================================================================="
+	echo "Restore database $dataname failed "
+	echo "-------------------------------------------------------------------------"
+	echo "Please check Backup file and try again !"
+	/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+	else	
+	rm -rf /tmp/vpssim1
+	rm -rf /tmp/vpssim2
+	clear
+	echo "========================================================================="
+	echo "Restore database $dataname successfully !"
+	/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+	fi
+###################################
+#Upload file backup len va Restore tu file nay
+###################################
+elif [ "$luachonphuchoi" = "uploadsaudophuchoi" ]; then
+randomcode=`date |md5sum |cut -c '1-18'`
+	if [ -f /home/$website/public_html/VPSSIM-DATABASE.tar.gz ]; then
+	echo "-------------------------------------------------------------------------"
+	echo "Discovered backup file VPSSIM-DATABASE.tar.gz"
+	echo "-------------------------------------------------------------------------"
+	echo "Preparing to Restore .... "
+	echo "-------------------------------------------------------------------------"
+	sleep 2
+	gunzip < /home/$website/public_html/VPSSIM-DATABASE.tar.gz | mysql -u root -p$mariadbpass $dataname
+	date -r /var/lib/mysql/$dataname +%H%M%S> /tmp/vpssim2
+	check1=`cat /tmp/vpssim1`
+	check2=`cat /tmp/vpssim2`
+		if [ "$check1" == "$check2" ]; then
+		rm -rf /tmp/vpssim1
+		rm -rf /tmp/vpssim2
+		clear
+		echo "========================================================================="
+		echo "Restore database $dataname failed "
+		echo "-------------------------------------------------------------------------"
+		echo "Please check Backup file and try again !"
+		/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+		else	
+		rm -rf /tmp/vpssim1
+		rm -rf /tmp/vpssim2
+        mv /home/$website/public_html/VPSSIM-DATABASE.tar.gz /home/$website/public_html/VPSSIM-DATABASE.tar.gz.$randomcode
+		clear
+		echo "========================================================================="
+		echo "Restore database $dataname successfully !"
+		echo "-------------------------------------------------------------------------"
+		echo "Backup file renamed to VPSSIM-DATABASE.tar.gz.$randomcode"
+		/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+		exit
+		fi
+		
+	else
+	clear
+	echo "========================================================================="
+	echo "HOW TO RESTORE"
+	echo "========================================================================="
+	echo "This function only restore database with Backup file in .TAR.GZ format"
+	echo "-------------------------------------------------------------------------"
+	echo "Rename Backup file to VPSSIM-DATABASE.tar.gz then upload to: "
+	echo "-------------------------------------------------------------------------"
+	echo "/home/$website/public_html/"
+	echo "========================================================================="
+	read -p "When Upload finish. Press [Enter] to Restore ..."
+	echo "-------------------------------------------------------------------------"
+	echo "VPSSIM finding Backup file .... "
+	echo "-------------------------------------------------------------------------"
+	sleep 4
+		if [ -f /home/$website/public_html/VPSSIM-DATABASE.tar.gz ]; then
+		echo "-------------------------------------------------------------------------"
+	echo "Discover Backup file VPSSIM-DATABASE.tar.gz"
+	echo "-------------------------------------------------------------------------"
+	echo "Prepare to restore .... "
+	echo "-------------------------------------------------------------------------"
+	sleep 2
+	gunzip < /home/$website/public_html/VPSSIM-DATABASE.tar.gz | mysql -u root -p$mariadbpass $dataname
+	date -r /var/lib/mysql/$dataname +%H%M%S> /tmp/vpssim2
+	check1=`cat /tmp/vpssim1`
+	check2=`cat /tmp/vpssim2`
+		if [ "$check1" == "$check2" ]; then
+		rm -rf /tmp/vpssim1
+		rm -rf /tmp/vpssim2
+		clear
+		echo "========================================================================="
+		echo "Restore database $dataname failed "
+		echo "-------------------------------------------------------------------------"
+		echo "Please check Backup file and try again !"
+		/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+		else	
+		rm -rf /tmp/vpssim1
+		rm -rf /tmp/vpssim2
+		mv /home/$website/public_html/VPSSIM-DATABASE.tar.gz /home/$website/public_html/VPSSIM-DATABASE.tar.gz.$randomcode
+		clear
+		echo "========================================================================="
+		echo "Restore database $dataname successfully !"
+		echo "-------------------------------------------------------------------------"
+		echo "Backup file renamed to VPSSIM-DATABASE.tar.gz.$randomcode"
+		/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+		exit
+		fi
+
+	else
+	clear
+		echo "========================================================================="
+		echo "Can not discover VPSSIM-DATABASE.tar.gz !"
+		echo "-------------------------------------------------------------------------"
+		echo "Please upload Backup file to server then try again"
+		/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+		exit
+		fi
+fi
+###################################
+#Huy bo phuchoi
+###################################
+else 
+clear && /etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+fi
+fi

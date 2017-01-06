@@ -1,0 +1,25 @@
+#!/bin/sh
+. /home/vpssim.conf
+echo "========================================================================="
+echo "Current [Auto re-start MySQL Server] function is being Enable"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to Disable this function ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait...."; sleep 1
+    rm -rf /etc/cron.d/vpssim-auto-start-mysql.cron
+    service crond restart
+    clear
+    echo "========================================================================="
+echo "Disable [Auto re-start MySQL Server] successfully !"
+/etc/vpssim/menu/vpssim-them-xoa-database
+        ;;
+    *)
+       clear
+    echo "========================================================================="
+   echo "Cancel Disable [Auto re-start MySQL Server] function"
+/etc/vpssim/menu/vpssim-them-xoa-database
+        ;;
+esac
+

@@ -1,0 +1,45 @@
+#!/bin/bash 
+. /home/vpssim.conf
+if [ ! -d "/etc/vpssim/crontab" ]; then
+mkdir -p /etc/vpssim/crontab
+else
+rm -r -f /etc/vpssim/crontab/*
+fi
+echo "========================================================================="
+echo -n "Type in Crontab you want to add [ENTER]: " 
+read cronjob
+if [ "$cronjob" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please type in accurately!"
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu
+exit
+fi
+if [ "$(grep "$cronjob" /var/spool/cron/root)" == "$cronjob" ]; then
+clear
+echo "========================================================================= "
+echo "Crontab you typed in is exit on system!"
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu
+exit
+fi
+crontab -l > /etc/vpssim/crontab/test4.txt
+(crontab -u root -l ; echo "$cronjob") | crontab -u root -
+crontab -l > /etc/vpssim/crontab/test5.txt
+if [ "$(wc -l /etc/vpssim/crontab/test4.txt | awk '{print $1}')" == "$(wc -l /etc/vpssim/crontab/test5.txt | awk '{print $1}')" ]; then
+rm -r -f /etc/vpssim/crontab/*
+clear
+echo "========================================================================= "
+echo "Request to add crontab is not completed because crontab is incorrect"
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu
+else
+rm -r -f /etc/vpssim/crontab/*
+clear
+echo "========================================================================= "
+echo "Request to add your crontab completed."
+echo "-------------------------------------------------------------------------"
+echo "List of current Crontab:"
+echo "-------------------------------------------------------------------------"
+crontab -l
+/etc/vpssim/menu/crontab/vpssim-cronjob-menu
+exit
+fi

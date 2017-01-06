@@ -1,0 +1,28 @@
+#!/bin/bash
+. /home/vpssim.conf
+echo "========================================================================="
+echo "Use this function to DISABLE Zend Opcache for server"
+echo "-------------------------------------------------------------------------"
+read -r -p "Do you want to disable Zend Opcache ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait....";sleep 1
+	mv /etc/php.d/opcache.ini /etc/php.d/opcache.bak
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service php-fpm restart
+else
+systemctl restart php-fpm.service
+fi
+clear
+echo "========================================================================="
+	echo "Disable Zend OPcache successfully !"
+/etc/vpssim/menu/opcache/vpssim-dang-tat-opcache-menu
+        ;;
+    *)
+        clear
+echo "========================================================================="
+echo "You typed wrong, Please fill accurately"
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+        ;;
+esac

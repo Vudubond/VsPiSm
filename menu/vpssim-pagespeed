@@ -1,0 +1,75 @@
+#!/bin/bash 
+
+echo -n "Type in the domain you want to check [ENTER]:" 
+read domain
+if [ "$domain" = "" ]; then
+echo "You typed wrong, please type in accurately"
+exit
+fi
+
+if [ -f /etc/nginx/conf.d/$domain.conf ]; then
+if [ -f /etc/vpssimpagespeed-enable/$domain ]; then
+echo "$domain is enabled ngx_pagespeed !!!"
+read -r -p "Do you want to disable ngx_pagespeed for $domain ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "it is about to disable ngx_pagespeed....."
+    sleep 1
+    cat > "/tmp/pagespeed.sh" <<END
+#!/bin/sh
+sed -i 's/include \/etc\/nginx\/ngx_pagespeed.conf;/#include \/etc\/nginx\/ngx_pagespeed.conf;/g' /etc/nginx/conf.d/$domain.conf
+END
+chmod +x /tmp/pagespeed.sh
+/tmp/pagespeed.sh
+rm -f /tmp/pagespeed.sh
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+fi
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "7" ]; then 
+systemctl restart nginx.service
+fi
+rm -f /etc/vpssimpagespeed-enable/$domain
+echo "..... Successfully !"
+        ;;
+    *)
+        echo "Bye....!"
+        ;;
+esac
+exit
+fi
+
+read -r -p "Do you want to enable ngx_pagespeed for $domain ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "it is about to enable ngx_pagespeed....."
+    sleep 1
+    cat > "/tmp/pagespeed.sh" <<END
+#!/bin/sh
+sed -i 's/#include \/etc\/nginx\/ngx_pagespeed.conf;/include \/etc\/nginx\/ngx_pagespeed.conf;/g' /etc/nginx/conf.d/$domain.conf
+END
+
+chmod +x /tmp/pagespeed.sh
+/tmp/pagespeed.sh
+rm -f /tmp/pagespeed.sh
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+fi
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "7" ]; then 
+systemctl restart nginx.service
+fi
+mkdir -p /etc/vpssimpagespeed-enable
+    cat > "/etc/vpssimpagespeed-enable/$domain" <<END
+1
+END
+echo "..... Successfully !"
+        ;;
+    *)
+        echo "Bye....!"
+        ;;
+esac
+exit
+else
+echo "Do not discover $domain in the system !!!!"
+echo "Please check and try again"
+exit
+fi

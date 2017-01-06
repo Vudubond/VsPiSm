@@ -1,0 +1,103 @@
+#!/bin/sh
+. /home/vpssim.conf
+. /etc/vpssim/pwprotect.default
+if [ ! -d /etc/nginx/pwprotect ]; then
+mkdir -p /etc/nginx/pwprotect
+fi
+
+if [ ! -f /etc/vpssim/uploadsite ]; then
+clear
+echo "========================================================================="
+echo "You have not installed File Manager for Server !"
+/etc/vpssim/menu/vpssim-web-upload-menu
+exit
+fi
+uploadsite=$(cat /etc/vpssim/uploadsite)
+if [ ! -f /etc/nginx/.htpasswd ]; then
+clear
+echo "========================================================================="
+echo "You must create default User & password before using this function. "
+echo "-------------------------------------------------------------------------"
+echo "Create it by: VPSSIM Menu => Default User & Password."
+/etc/vpssim/menu/vpssim-web-upload-menu
+exit
+fi
+
+if [ "$(grep auth_basic_user_file /etc/nginx/conf.d/$uploadsite.conf)" == "" ] ; then 
+echo "========================================================================="
+echo "Use this function to Enable/Disable protection File Manager. "
+echo "-------------------------------------------------------------------------"
+echo "Login Info: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to Enable protection File Manager ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+echo "Please wait ... "
+sleep 1
+rm -rf /tmp/baovedomainfilemanage
+   cat >> "/tmp/baovedomainfilemanage" <<END
+sed -i "/server_name\ $uploadsite;/aauth_basic \"Authorization Required\";" /etc/nginx/conf.d/$uploadsite.conf
+sed -i "/.*Authorization\ Required.*/aauth_basic_user_file  /etc/nginx/.htpasswd;" /etc/nginx/conf.d/$uploadsite.conf
+END
+chmod +x /tmp/baovedomainfilemanage
+/tmp/baovedomainfilemanage
+rm -rf /tmp/baovedomainfilemanage
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else 
+systemctl reload nginx
+fi
+;;
+    *)
+       clear 
+echo "========================================================================= "
+echo "Cancel !"
+/etc/vpssim/menu/vpssim-web-upload-menu
+        ;;
+esac
+clear 
+echo "========================================================================= "
+echo "Config protection File Manager finished."
+echo "-------------------------------------------------------------------------"
+echo "Login infomation: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+/etc/vpssim/menu/vpssim-web-upload-menu
+
+else
+
+echo "========================================================================="
+echo "Current Protection File Manager is Enabled."
+echo "-------------------------------------------------------------------------"
+echo "Login Info: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to Disable this function ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+echo "Please wait ... "
+sleep 1
+sed -i '/auth_basic/d' /etc/nginx/conf.d/$uploadsite.conf
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else 
+systemctl reload nginx
+fi
+;;
+    *)
+       clear 
+echo "========================================================================= "
+echo "Cancel !"
+/etc/vpssim/menu/vpssim-web-upload-menu
+        ;;
+esac
+clear 
+echo "========================================================================= "
+echo "Disable protection File Manager finished."
+/etc/vpssim/menu/vpssim-web-upload-menu
+fi

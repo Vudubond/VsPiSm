@@ -1,0 +1,7 @@
+
+#!/bin/sh
+if [ ! -f /usr/bin/btsync ]; then
+/etc/vpssim/menu/vpssim-cai-dat-bitsync
+else
+/etc/vpssim/menu/vpssim-xoa-remove-bitsync
+fi

@@ -1,0 +1,104 @@
+#!/bin/bash
+. /home/vpssim.conf
+rm -rf /tmp/*hostingaz*
+mkdir -p /tmp/danhsachdatabasebackuphostingaz
+listdatabases=$(ls -l /var/lib/mysql | grep "^d" | awk -F" " '{print $9}' | grep -Ev "(Database|information_schema|mysql|performance_schema|vpssimCheckDB)")
+code=`date |md5sum |cut -c '1-12'`
+rm -rf /tmp/checksite-list
+for dataname in $listdatabases 
+do
+if [ -f /home/$mainsite/private_html/backup/$dataname/*.sql.gz ]; then
+echo "$dataname" >> /tmp/checksite-list
+fi
+done
+
+if [ ! -f /tmp/checksite-list ]; then
+clear
+echo "========================================================================="
+echo "VPSSIM can not find any backup on server"
+/etc/vpssim/menu/vpssim-them-xoa-database
+exit
+fi
+sodatabasecobackup=$(cat /tmp/checksite-list | wc -l)
+listdatabasedasaoluu=$(cat /tmp/checksite-list)
+getlink ()
+{
+find /home/$mainsite/private_html/backup/$dataname/ -name '*.sql.gz' -type f -exec basename {} \;  > /tmp/linkdatabasename
+filename=`cat /tmp/linkdatabasename`
+find /home/$mainsite/private_html/backup/$dataname/ -type f -exec basename {} \;  > /tmp/linkbackupall
+backupall=$(cat /tmp/linkbackupall)
+if [ "$(cat /tmp/linkbackupall | wc -l)" -gt 1 ]; then
+showinfo=`echo "Most Recent Backup File (Created On $(date -r /home/$mainsite/private_html/backup/$dataname/$filename +%H:%M/%F)):" `
+else
+showinfo=`echo "Backup File (Created On  $(date -r /home/$mainsite/private_html/backup/$dataname/$filename +%H:%M/%F)): "`
+fi
+echo "========================================================================="
+echo "Discovered backup file for database: $dataname"
+echo "-------------------------------------------------------------------------"
+sleep 2
+echo "http://$serverip:$priport/backup/$dataname/$filename"
+cd
+echo "" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "========================================================================================================================" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "Database [ $dataname ]" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt 
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "$showinfo"  >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "http://$serverip:$priport/backup/$dataname/$filename" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+touch /tmp/danhsachdatabasebackuphostingaz/$dataname
+#####################
+if [ "$(cat /tmp/linkbackupall | wc -l)" -gt 1 ]; then
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "All Backup Files:" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+for backupfile in $backupall
+do
+echo "http://$serverip:$priport/backup/$dataname/$backupfile" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+done
+fi
+#########################
+rm -rf /tmp/linkbackupall
+}
+echo "========================================================================="
+echo "Use this function to get link download all backup of databases on server"
+echo "=========================================================================" 
+read -r -p "You want to get this list ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "========================================================================="
+echo "Please wait ..."
+sleep 2
+rm -rf /home/$mainsite/private_html/Listbackupall*.txt
+echo "========================================================================================================================" > /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "                                Link Download All Backup Files - Created by VPSSIM" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "========================================================================================================================" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+
+for dataname in $listdatabasedasaoluu 
+do
+getlink
+done
+clear
+echo "========================================================================="
+echo "Database Has Backup:"
+echo "-------------------------------------------------------------------------"
+ls /tmp/danhsachdatabasebackuphostingaz | pr -2 -t
+echo "-------------------------------------------------------------------------"
+echo "Link Download All Backup Files:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/Listbackupall-DB-$code.txt"
+echo "" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "===================================================The End==============================================================" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+/etc/vpssim/menu/vpssim-them-xoa-database
+rm -rf /tmp/*hostingaz*
+   ;;
+    *)
+    clear
+        echo "========================================================================= "
+        echo "Cancel get backup links"
+        /etc/vpssim/menu/vpssim-them-xoa-database
+        ;;
+esac
+

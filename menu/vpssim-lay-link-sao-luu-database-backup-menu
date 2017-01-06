@@ -1,0 +1,35 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+
+prompt="Type in your choice: "
+options=( "1 Database" "All Database" "Cancel")
+printf "=========================================================================\n"
+printf "CHOOSE GET LINK DOWNLOAD BACKUP FOR 1 DATABASE OR ALL DATABASES\n"
+printf "=========================================================================\n"
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+
+    case "$REPLY" in
+    1) laylink="1database"; break;;
+    2) laylink="tatca"; break;;
+    3) laylink="Cancel"; break;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+###################################
+#
+###################################
+if [ "$laylink" = "1database" ]; then
+/etc/vpssim/menu/vpssim-link-database-sao-luu
+###################################
+#
+###################################
+elif [ "$laylink" = "tatca" ]; then
+/etc/vpssim/menu/vpssim-link-download-tat-ca-backup-database-sao-luu
+###################################
+#
+###################################
+else 
+clear && /etc/vpssim/menu/vpssim-them-xoa-database
+fi

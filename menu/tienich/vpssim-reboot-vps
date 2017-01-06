@@ -1,0 +1,15 @@
+#!/bin/sh
+. /home/vpssim.conf
+echo "========================================================================="
+read -r -p "You want to reboot server? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "Prepare to reboot ..... "
+sleep 1
+reboot
+;;
+esac
+clear
+echo "========================================================================="
+echo "You cancel reboot VPS!!!"
+/etc/vpssim/menu/vpssim-tien-ich

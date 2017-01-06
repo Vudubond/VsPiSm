@@ -1,0 +1,84 @@
+#!/bin/bash 
+. /home/vpssim.conf
+if [ ! -f /usr/local/maldetect/conf.maldet ]; then
+clear
+echo "========================================================================= "
+echo "LMD with ClamAV is not existed in VPS "
+echo "-------------------------------------------------------------------------"
+echo "Please install LMD first !"
+/etc/vpssim/menu/vpssim-maldet-menu
+exit
+fi
+echo "========================================================================= "
+echo "Use this function to scan malware a website"
+echo "-------------------------------------------------------------------------"
+nhapdulieu() {
+echo -n "Type in website [ENTER]: " 
+read website
+if [ "$website" = "" ]; then
+echo "-------------------------------------------------------------------------"
+echo "You typed wrong, please type in accurately!"
+echo "-------------------------------------------------------------------------"
+nhapdulieu
+fi
+
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+echo "-------------------------------------------------------------------------"
+echo "$website maybe not a domain name!"
+echo "-------------------------------------------------------------------------"
+nhapdulieu
+fi
+
+
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+echo "========================================================================="
+echo "Can not discover $website"
+echo "-------------------------------------------------------------------------"
+nhapdulieu
+fi
+echo "-------------------------------------------------------------------------"
+echo "Discovered $website "
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to Scan $website ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY])
+    echo "-------------------------------------------------------------------------"
+echo "Please wait...";sleep 1 
+clear
+echo "========================================================================="
+maldet -a /home/$website
+name123=$(cat /usr/local/maldetect/sess/session.last)
+rm -rf /tmp/maldet.txt
+cp /usr/local/maldetect/sess/session.$name123 /tmp/maldet-last.txt
+sed -i '$d' /tmp/maldet-last.txt && sed -i '$d' /tmp/maldet-last.txt && sed -i '1d' /tmp/maldet-last.txt && sed -i '1d' /tmp/maldet-last.txt && sed -i '1d' /tmp/maldet-last.txt
+clear
+echo "========================================================================="
+echo "Report for scan on: $(maldet --report list | grep SCAN | awk 'NR==1 {print $1,$2,$3}')"
+echo "-------------------------------------------------------------------------"
+cat /tmp/maldet-last.txt | grep '\S'
+/etc/vpssim/menu/vpssim-maldet-menu
+        ;;
+    *)
+clear
+echo "========================================================================="
+echo "Cancel Scan $website "
+/etc/vpssim/menu/vpssim-maldet-menu
+        ;;
+esac
+}
+nhapdulieu
+
+
+
+
+
+
+
+
+
+
+
+
+

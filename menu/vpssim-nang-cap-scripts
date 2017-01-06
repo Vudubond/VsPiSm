@@ -1,0 +1,85 @@
+#!/bin/bash
+
+. /home/vpssim.conf
+if [ ! -f /etc/vpssim/vpssim.version ]; then
+printf "=========================================================================\n"
+echo "Sorry, we do not know your current version"
+echo "-------------------------------------------------------------------------"
+echo "Make sure you use VPSSIM provided by VPSSIM.COM"
+exit
+fi
+
+maximumsize=10
+rm -rf /etc/vpssim/vpssim.newversion
+cd /etc/vpssim
+timeout 3 wget -q https://vpssim.com/script/vpssim/vpssim.newversion
+cd
+if [ -f /etc/vpssim/vpssim.newversion ]; then
+checksizeversion=$(du -sb /etc/vpssim/vpssim.newversion | awk 'NR==1 {print $1}')
+   if [ "$checksizeversion" == "0" ];then
+   rm -rf /etc/vpssim/vpssim.newversion
+   fi
+   if [ $checksizeversion -gt $maximumsize ]; then
+   rm -rf /etc/vpssim/vpssim.newversion
+   fi
+fi
+
+if [ ! -f /etc/vpssim/vpssim.newversion ]; then
+clear
+printf "=========================================================================\n"
+echo "VPSSIM can not check update version"
+echo "-------------------------------------------------------------------------"
+echo "Please try again"
+/etc/vpssim/menu/vpssim-update-upgrade-service-menu
+else
+LOCALVER=`cat /etc/vpssim/vpssim.version`
+REMOVER=`cat /etc/vpssim/vpssim.newversion`
+fi
+
+if [ "$LOCALVER" == "$REMOVER" ]; then
+rm -rf /etc/vpssim/vpssim.newversion
+clear
+echo "========================================================================="
+echo "You are using the latest version of VPSSIM - Version: $LOCALVER"
+echo "-------------------------------------------------------------------------"
+echo "View VPSSIM update Log on: http://vpssim.com/news"
+/etc/vpssim/menu/vpssim-update-upgrade-service-menu
+exit
+fi
+
+printf "=========================================================================\n"
+printf "View VPSSIM update Log on: http://vpssim.com/news\n"
+printf "=========================================================================\n"
+printf "Detected update for VPSSIM\n"
+echo "-------------------------------------------------------------------------"
+printf "Your version: $LOCALVER\n"
+echo "-------------------------------------------------------------------------"
+printf "Newest version: $REMOVER\n"
+printf "=========================================================================\n"
+read -r -p "Are you sure want to upgrade VPSSIM ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+echo "Prepare to update VPSSIM..... "
+sleep 1
+rm -f /etc/vpssim/vpssim-update
+wget -q http://vpssim.com/script/vpssim/vpssim-update -O /etc/vpssim/vpssim-update && chmod +x /etc/vpssim/vpssim-update
+/etc/vpssim/vpssim-update
+
+exit
+
+ ;;
+    *)
+        clear
+printf "=========================================================================\n"
+echo "You chose do not update VPSSIM"
+vpssim
+        ;;
+esac
+clear && /etc/vpssim/menu/vpssim-update-upgrade-service-menu
+
+
+
+
+
+

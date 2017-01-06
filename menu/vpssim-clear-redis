@@ -1,0 +1,20 @@
+#!/bin/bash 
+. /home/vpssim.conf
+
+if [ "$(redis-cli ping)" = "PONG" ]; then
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..." 
+sleep 1
+( echo "flushall" ) | redis-cli
+clear
+echo "========================================================================="
+echo "Clear Redis Cache Complete"
+/etc/vpssim/menu/vpssim-redis-menu
+else
+clear
+echo "========================================================================="
+echo "Redis Cache current Stopped"
+echo "-------------------------------------------------------------------------"
+echo "Please start it by command [ service redis start ]"
+/etc/vpssim/menu/vpssim-redis-menu
+fi

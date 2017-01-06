@@ -1,0 +1,90 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+
+if [ ! -d /home/$mainsite/private_html/backup/AllDB ]; then
+mkdir -p /home/$mainsite/private_html/backup/AllDB
+fi
+if [ ! -f /home/$mainsite/private_html/backup/AllDB/*.gz ]; then
+clear
+echo "========================================================================="
+echo "Undetectable backup file with .GZ format !"
+echo "-------------------------------------------------------------------------"
+echo "You must create backup first or Upload your backup file to:"
+echo "-------------------------------------------------------------------------"
+echo "/home/$mainsite/private_html/backup/AllDB"
+echo "-------------------------------------------------------------------------"
+echo "Then run this function again."
+/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-tat-ca-database-menu
+exit
+fi
+
+if [ -d /home/$mainsite/private_html/backup/AllDB ]; then
+cd /home/$mainsite/private_html/backup/AllDB
+checknumberfile=$(ls -l | grep ^- | wc -l)
+if [ "$checknumberfile" -gt "1" ]; then
+cd
+clear
+echo "========================================================================="
+echo "Have $checknumberfile files in /home/$mainsite/private_html/backup/AllDB"
+echo "-------------------------------------------------------------------------"
+echo "In the directory AllDB allow only one single backup file ! "
+echo "-------------------------------------------------------------------------"
+echo "Delete unnecessary files and try again !"
+/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-tat-ca-database-menu
+exit
+ fi
+ fi
+ 
+clear
+echo "========================================================================="
+echo "                VPSSIM - Manage VPS/Server by VPSSIM.COM                "
+echo "========================================================================="
+echo "                        Restore All Database                             "
+echo "========================================================================="
+echo""
+echo "Use this function to restore the databases from the recent backup on VPS"  
+echo "If you want restore database from the other backup file"
+echo "First you need delete the backup file in:"
+echo "-------------------------------------------------------------------------"
+echo "/home/$mainsite/private_html/backup/AllDB"
+echo "-------------------------------------------------------------------------"
+echo "and upload your backup file to AllDB directory."
+echo "Backup file must have the extension .GZ"
+echo "If different format, this function will not work !"
+echo "========================================================================="
+read -p "Press [Enter] to continue ..."
+
+clear
+find /home/$mainsite/private_html/backup/AllDB/ -type f -exec basename {} \;  > /tmp/backupname
+filename=`cat /tmp/backupname`
+rm -rf /tmp/backupname
+echo "========================================================================="
+echo "                VPSSIM - Manage VPS/Server by VPSSIM.COM                "
+echo "========================================================================="
+echo "                         Restore All Database                             "
+echo "========================================================================="
+echo " "
+echo "If in the VPS, do not have any database, after restore complete"
+echo "all databases restored will have user + password like in the backup file"
+echo "-------------------------------------------------------------------------"
+echo "If your VPS already have databases, after complete restore "
+echo "All current databases will be replace with the data in the backup file"
+echo "You need to be careful when using this function !"
+echo "========================================================================= "
+echo "Discovered the backup file: $filename"
+echo "--------------------------------------------------------------------------"
+echo "File created on: $(date -r /home/$mainsite/private_html/backup/AllDB/$filename +%H:%M/%F)"
+echo "========================================================================= "
+read -r -p "Do you want to restore all database from this backup? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+/etc/vpssim/menu/vpssim-phuc-hoi-tat-ca-database
+;;
+esac
+clear
+echo "========================================================================= "
+echo "You cancel restore all databases ! "
+/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-tat-ca-database-menu
+exit
+fi

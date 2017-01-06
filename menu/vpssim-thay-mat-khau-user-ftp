@@ -1,0 +1,89 @@
+#!/bin/bash
+. /home/vpssim.conf
+
+if [ ! -f /etc/pure-ftpd/pure-ftpd.conf ]; then
+clear
+echo "========================================================================= "
+echo "FTP server is not installed "
+echo "-------------------------------------------------------------------------"
+echo "You must run Setup FTP server function first !"
+/etc/vpssim/menu/vpssim-ftpserver-menu
+exit
+fi
+echo "========================================================================="
+echo "Use this function to change FTP password for website"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the website [ENTER]: " 
+read website
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, Please type in accurately !"
+/etc/vpssim/menu/vpssim-ftpserver-menu
+exit
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a domain name "
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-ftpserver-menu
+exit
+fi
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "Can not discover $website"
+echo "-------------------------------------------------------------------------"
+echo "Please try again ."
+/etc/vpssim/menu/vpssim-ftpserver-menu
+exit
+fi
+if [ "$(pure-pw list | grep "/home/$website/")" == "" ]; then
+clear
+echo "========================================================================="
+echo "Website $website chua tao tai khoan FTP!"
+/etc/vpssim/menu/vpssim-ftpserver-menu
+fi
+
+echo "========================================================================="
+echo "Discover FTP account for $website" 
+echo "-------------------------------------------------------------------------"
+echo "Current FTP account info :"
+echo "-------------------------------------------------------------------------"
+echo "Username: $(grep "/home/$website/" /etc/vpssim/FTP-Account.info | awk 'NR==1 {print $7}')  |  Password: $(grep "/home/$website/" /etc/vpssim/FTP-Account.info | awk 'NR==1 {print $10}')"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will change password for: $(grep "/home/$website/" /etc/vpssim/FTP-Account.info | awk 'NR==1 {print $7}')"
+echo "========================================================================="
+echo "Please wait ....."
+sleep 7
+username=$(grep "/home/$website/" /etc/vpssim/FTP-Account.info | awk 'NR==1 {print $7}')
+mkmoi=`date |md5sum |cut -c '3-23'`
+#echo "$mkmoi" | passwd --stdin $ftpuser
+( echo ${mkmoi} ; echo ${mkmoi} ) | pure-pw passwd $username
+pure-pw mkdb
+cat > "/tmp/xoaftpuser" <<END	
+sed -i '/\/home\/$website/d' /etc/vpssim/FTP-Account.info
+END
+chmod +x /tmp/xoaftpuser
+/tmp/xoaftpuser
+rm -rf /tmp/xoaftpuser
+echo "FTP Account for $website | Username: $username | Password: $mkmoi | dd /home/$website/ " >> /etc/vpssim/FTP-Account.info
+clear
+echo "========================================================================= "
+echo "Change password for $(grep "/home/$website/" /etc/vpssim/FTP-Account.info | awk 'NR==1 {print $7}') successful"
+echo "-------------------------------------------------------------------------"
+echo "New login info:"
+echo "-------------------------------------------------------------------------"
+echo "IP: $serverip"
+echo "-------------------------------------------------------------------------"
+echo "User: $username | Password: $mkmoi"
+/etc/vpssim/menu/vpssim-ftpserver-menu
+
+
+
+
+

@@ -1,0 +1,394 @@
+#!/bin/sh
+. /home/vpssim.conf
+re='^[0-9]+$'
+dataname=$(cat /tmp/databaseautobackup)
+randomcode=`date |md5sum |cut -c '1-12'` 
+
+chonthoigianluubackupfile () {
+prompt="Type in your choice: "
+options=( "3 Days" "7 Days" "10 Days" "15 Days" "20 Days" "25 Days" "30 Days")
+echo "========================================================================="
+echo "Choose How Many Days Backup File Will be Stored In Server"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM Will Auto Delete Backup Files Older Than The Days You Choose" 
+echo "========================================================================="
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+
+    case "$REPLY" in
+    1) songay="3ngay"; break;;
+    2) songay="7ngay"; break;;
+    3) songay="10ngay"; break;;
+    4) songay="15ngay"; break;;
+    5) songay="20ngay"; break;;
+    6) songay="25ngay"; break;;
+    7) songay="30ngay"; break;;     
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+if [ "$songay" = "3ngay" ]; then
+songayxoa=3
+elif [ "$songay" = "7ngay" ]; then
+songayxoa=7
+elif [ "$songay" = "10ngay" ]; then
+songayxoa=10
+elif [ "$songay" = "15ngay" ]; then
+songayxoa=15
+elif [ "$songay" = "20ngay" ]; then
+songayxoa=20
+elif [ "$songay" = "25ngay" ]; then
+songayxoa=25
+else
+songayxoa=30
+fi
+}
+
+chonthoigianluubackupfilehangtuan () {
+prompt="Type in your choice: "
+options=( "7 Days" "14 Days" "21 Days" "28 Days" "35 Days" "42 Days" "49 Days")
+echo "========================================================================="
+echo "Choose How Many Days Backup File Will be Stored In Server"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM Will Auto Delete Backup Files Older Than The Days You Choose" 
+echo "========================================================================="
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+
+    case "$REPLY" in
+    1) songay="7ngay"; break;;
+    2) songay="14ngay"; break;;
+    3) songay="21ngay"; break;;
+    4) songay="28ngay"; break;;
+    5) songay="35ngay"; break;;
+    6) songay="42ngay"; break;;
+    7) songay="49ngay"; break;;     
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+if [ "$songay" = "7ngay" ]; then
+songayxoa=7
+elif [ "$songay" = "14ngay" ]; then
+songayxoa=14
+elif [ "$songay" = "21ngay" ]; then
+songayxoa=21
+elif [ "$songay" = "28ngay" ]; then
+songayxoa=28
+elif [ "$songay" = "35ngay" ]; then
+songayxoa=35
+elif [ "$songay" = "42ngay" ]; then
+songayxoa=42
+else
+songayxoa=49
+fi
+}
+
+chongio()
+{
+echo -n "What time you want VPSSIM start backup ? [0-23]: " 
+read gio
+if [ "$gio" = "" ]; then
+echo "========================================================================="
+echo "You don't type in the time"
+echo "-------------------------------------------------------------------------"
+echo "The backup time must be a number within range of (0 - 23)."
+echo "-------------------------------------------------------------------------"
+chongio
+fi
+if ! [[ $gio =~ $re ]] ; then
+echo "========================================================================="
+echo "$gio incorrect!"
+echo "-------------------------------------------------------------------------"
+echo "The backup time must be a number within range of (0 - 23)."
+echo "-------------------------------------------------------------------------"
+chongio
+fi
+if ! [[ $gio -ge 0 && $gio -le 23  ]] ; then 
+echo "========================================================================="
+echo "$gio incorrect!"
+echo "-------------------------------------------------------------------------"
+echo "The backup time must be a number within range of (0 - 23)."
+echo "-------------------------------------------------------------------------"
+chongio
+fi 
+}
+chonthu()
+{
+echo "-------------------------------------------------------------------------"
+echo -n "What day you want VPSSIM doing backup ?[2-8]: " 
+read thu
+if [ "$thu" = "" ]; then
+echo "========================================================================="
+echo "You don't type in the day !"
+echo "-------------------------------------------------------------------------"
+echo "The backup day must be a number within range of (2 - 8)."
+chonthu
+fi
+if [ "$thu" = "8" ]; then
+thu12="Sunday"
+day=0
+fi
+if [ "$thu" = "2" ]; then
+thu12="Monday"
+day=1
+fi
+if [ "$thu" = "3" ]; then
+thu12="Tuesday"
+day=2
+fi
+if [ "$thu" = "4" ]; then
+thu12="Wednesday"
+day=3
+fi
+if [ "$thu" = "5" ]; then
+thu12="Thursday"
+day=4
+fi
+if [ "$thu" = "6" ]; then
+thu12="Friday"
+day=5
+fi
+if [ "$thu" = "7" ]; then
+thu12="Saturday"
+day=6
+fi
+if ! [[ $thu =~ $re ]] ; then
+echo "========================================================================="
+echo "$thu is incorrect!"
+echo "-------------------------------------------------------------------------"
+echo "The backup day must be a number within range of (2 - 8)."
+chonthu
+fi
+if ! [[ $thu -ge 2 && $thu -le 8  ]] ; then 
+echo "========================================================================="
+echo "$thu is incorrect!"
+echo "-------------------------------------------------------------------------"
+echo "The backup day must be a number within range of (2 - 8)."
+chonthu
+fi 
+}
+
+
+echo "-------------------------------------------------------------------------"
+echo "You have not ENABLE auto backup for Database $dataname yet"
+
+prompt="Type in your choice: "
+options=( "Backup Once A Week" "Backup Once A Day" "Backup Once An Hour" "Cancel")
+printf "=========================================================================\n"
+printf "CHOOSE HOW TO AUTO BACKUP  \n"
+printf "=========================================================================\n"
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+
+    case "$REPLY" in
+    1) cachsaoluu="hangtuan"; break;;
+    2) cachsaoluu="hangngay"; break;;
+    3) cachsaoluu="hanggio"; break;;
+    4) cachsaoluu="cancel"; break;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+
+###################################
+#Sao luu hang tuan
+###################################
+if [ "$cachsaoluu" = "hangtuan" ]; then
+echo "========================================================================="
+chongio
+echo "-------------------------------------------------------------------------"
+echo "2: Monday, 3: Tue, 4: Wed, 5: Thu, 6: Fri, 7: Saturday, 8: Sunday"
+chonthu
+chonthoigianluubackupfilehangtuan
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM Will Delete Backup Files Over $songayxoa Days Old"
+echo "-------------------------------------------------------------------------"
+read -r -p "VPSSIM will backup $dataname on $gio h $thu12 everyweek ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+        echo "-------------------------------------------------------------------------"
+    echo "Please wait ..."
+    sleep 2
+    cat > "/bin/vpssim-backupdb-$dataname" <<END
+#!/bin/sh
+. /home/vpssim.conf
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+if [ ! -d /home/$mainsite/private_html/backup/$dataname ]; then
+mkdir -p /home/$mainsite/private_html/backup/$dataname
+fi
+find /home/$mainsite/private_html/backup/$dataname/ -mtime +$songayxoa -exec rm {} \;
+cd /home/$mainsite/private_html/backup/$dataname
+for file in *.sql.gz; do
+time=\$(date -r /home/$mainsite/private_html/backup/$dataname/\$file +%H%M-%d%m%y)
+    mv "\$file" "\`basename \$file .sql.gz\`.sql.gz.\$time"
+done
+cd
+cd /home/$mainsite/private_html/backup/$dataname
+if [ "\$(grep "default_storage_engine = MyISAM" /etc/my.cnf.d/server.cnf | awk 'NR==1 {print \$3}')" = "MyISAM" ]; then
+mysqldump -u root -p\$mariadbpass $dataname --lock-tables=false | gzip -6 > $dataname-$randomcode.sql.gz
+else
+mysqldump -u root -p\$mariadbpass $dataname --single-transaction | gzip -6 > $dataname-$randomcode.sql.gz
+fi
+cd
+END
+chmod +x /bin/vpssim-backupdb-$dataname
+  if [ ! -f /etc/cron.d/vpssim.db.cron ]; then
+echo "SHELL=/bin/sh" > /etc/cron.d/vpssim.db.cron
+echo "0 $gio * * $day root /bin/vpssim-backupdb-$dataname >/dev/null 2>&1" >> /etc/cron.d/vpssim.db.cron
+else
+  if [ "$(grep "SHELL=/bin/sh" /etc/cron.d/vpssim.db.cron)" == "" ]; then
+echo "SHELL=/bin/sh" > /etc/cron.d/vpssim.db.cron 
+  fi
+echo "0 $gio * * $day root /bin/vpssim-backupdb-$dataname >/dev/null 2>&1" >> /etc/cron.d/vpssim.db.cron
+fi
+service crond restart
+clear
+echo "========================================================================="
+echo "Setting Auto backup for $dataname successfuly."
+echo "-------------------------------------------------------------------------"
+echo "Database will auto backup on: $gio h $thu12 everyweek."
+echo "-------------------------------------------------------------------------"
+echo "Link Backup File:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/backup/$dataname/$dataname-$randomcode.sql.gz"
+/etc/vpssim/menu/vpssim-them-xoa-database
+;;
+*)
+clear
+echo "========================================================================="
+echo "You cancel config auto backup $dataname !"
+/etc/vpssim/menu/vpssim-them-xoa-database
+;;
+esac
+###################################
+#Sao luu hang ngay
+###################################
+elif [ "$cachsaoluu" = "hangngay" ]; then
+echo "========================================================================="
+chongio
+chonthoigianluubackupfile
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM Will Delete Backup Files Over $songayxoa Days Old"
+echo "-------------------------------------------------------------------------"
+read -r -p "VPSSIM will backup $dataname on $gio h everyday ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait ..."
+    sleep 2
+    cat > "/bin/vpssim-backupdb-$dataname" <<END
+#!/bin/sh
+. /home/vpssim.conf
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+if [ ! -d /home/$mainsite/private_html/backup/$dataname ]; then
+mkdir -p /home/$mainsite/private_html/backup/$dataname
+fi
+find /home/$mainsite/private_html/backup/$dataname/ -mtime +$songayxoa -exec rm {} \;
+cd /home/$mainsite/private_html/backup/$dataname
+for file in *.sql.gz; do
+time=\$(date -r /home/$mainsite/private_html/backup/$dataname/\$file +%H%M-%d%m%y)
+    mv "\$file" "\`basename \$file .sql.gz\`.sql.gz.\$time"
+done
+cd
+cd /home/$mainsite/private_html/backup/$dataname
+if [ "\$(grep "default_storage_engine = MyISAM" /etc/my.cnf.d/server.cnf | awk 'NR==1 {print \$3}')" = "MyISAM" ]; then
+mysqldump -u root -p\$mariadbpass $dataname --lock-tables=false | gzip -6 > $dataname-$randomcode.sql.gz
+else
+mysqldump -u root -p\$mariadbpass $dataname --single-transaction | gzip -6 > $dataname-$randomcode.sql.gz
+fi
+cd
+END
+chmod +x /bin/vpssim-backupdb-$dataname
+  if [ ! -f /etc/cron.d/vpssim.db.cron ]; then
+echo "SHELL=/bin/sh" > /etc/cron.d/vpssim.db.cron
+echo "0 $gio * * * root /bin/vpssim-backupdb-$dataname >/dev/null 2>&1" >> /etc/cron.d/vpssim.db.cron
+else
+  if [ "$(grep "SHELL=/bin/sh" /etc/cron.d/vpssim.db.cron)" == "" ]; then
+echo "SHELL=/bin/sh" > /etc/cron.d/vpssim.db.cron 
+  fi
+echo "0 $gio * * * root /bin/vpssim-backupdb-$dataname >/dev/null 2>&1" >> /etc/cron.d/vpssim.db.cron
+fi
+service crond restart
+clear
+echo "========================================================================="
+echo "Setting Auto backup for $dataname successfuly."
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will backup Database on $gio h everyday."
+echo "-------------------------------------------------------------------------"
+echo "Link Backup File:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/backup/$dataname/$dataname-$randomcode.sql.gz"
+/etc/vpssim/menu/vpssim-them-xoa-database
+;;
+*)
+clear
+echo "========================================================================="
+echo "You cancel config auto backup $dataname !"
+/etc/vpssim/menu/vpssim-them-xoa-database
+;;
+esac
+#Sao luu hang gio
+###################################
+elif [ "$cachsaoluu" = "hanggio" ]; then
+chonthoigianluubackupfile
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM Will Delete Backup Files Over $songayxoa Days Old"
+echo "========================================================================="
+read -r -p "VPSSIM will backup $dataname once an hour ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+        echo "-------------------------------------------------------------------------"
+    echo "Please wait ..."
+    sleep 2
+    cat > "/bin/vpssim-backupdb-$dataname" <<END
+#!/bin/sh
+. /home/vpssim.conf
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+if [ ! -d /home/$mainsite/private_html/backup/$dataname ]; then
+mkdir -p /home/$mainsite/private_html/backup/$dataname
+fi
+find /home/$mainsite/private_html/backup/$dataname/ -mtime +$songayxoa -exec rm {} \;
+cd /home/$mainsite/private_html/backup/$dataname
+for file in *.sql.gz; do
+time=\$(date -r /home/$mainsite/private_html/backup/$dataname/\$file +%H%M-%d%m%y)
+    mv "\$file" "\`basename \$file .sql.gz\`.sql.gz.\$time"
+done
+cd
+cd /home/$mainsite/private_html/backup/$dataname
+if [ "\$(grep "default_storage_engine = MyISAM" /etc/my.cnf.d/server.cnf | awk 'NR==1 {print \$3}')" = "MyISAM" ]; then
+mysqldump -u root -p\$mariadbpass $dataname --lock-tables=false | gzip -6 > $dataname-$randomcode.sql.gz
+else
+mysqldump -u root -p\$mariadbpass $dataname --single-transaction | gzip -6 > $dataname-$randomcode.sql.gz
+fi
+cd
+END
+chmod +x /bin/vpssim-backupdb-$dataname
+  if [ ! -f /etc/cron.d/vpssim.db.cron ]; then
+echo "SHELL=/bin/sh" > /etc/cron.d/vpssim.db.cron
+echo "0 * * * * root /bin/vpssim-backupdb-$dataname >/dev/null 2>&1" >> /etc/cron.d/vpssim.db.cron
+else
+  if [ "$(grep "SHELL=/bin/sh" /etc/cron.d/vpssim.db.cron)" == "" ]; then
+echo "SHELL=/bin/sh" > /etc/cron.d/vpssim.db.cron 
+  fi
+echo "0 * * * * root /bin/vpssim-backupdb-$dataname >/dev/null 2>&1" >> /etc/cron.d/vpssim.db.cron
+fi
+service crond restart
+clear
+echo "========================================================================="
+echo "Setting Auto backup for $dataname successfuly."
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will backup Database once an hour"
+echo "-------------------------------------------------------------------------"
+echo "Link Backup File:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/backup/$dataname/$dataname-$randomcode.sql.gz"
+/etc/vpssim/menu/vpssim-them-xoa-database
+;;
+*)
+clear
+echo "========================================================================="
+echo "You cancel config auto backup $dataname !"
+/etc/vpssim/menu/vpssim-them-xoa-database
+;;
+esac
+else 
+clear && /etc/vpssim/menu/vpssim-them-xoa-database
+fi

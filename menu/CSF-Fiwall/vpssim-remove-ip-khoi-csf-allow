@@ -1,0 +1,71 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+if [ -f /etc/csf/csf.conf ]; then
+echo "========================================================================="
+test_csf=$(csf -v | awk 'NR==1 {print $NF}')
+if [ "$test_csf" == "enable" ]; then
+echo "This function will enable CSF firewall if you are disabling it on VPS"
+echo "-------------------------------------------------------------------------" 
+fi
+echo -n "Type in IP you want to remove from CSF.Allow [ENTER]: " 
+read ipremove
+if [ "$ipremove" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please fill accurately"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi
+if [ "$test_csf" == "enable" ]; then
+csf -e
+fi
+if [ ! "$(ping -c 1 $ipremove | tail -n +1 | head -1 | awk 'NR==1 {print $1}')" == "PING" ]; then
+clear
+echo "========================================================================="
+echo "$ipremove is not a valid IP/CIDR ! "
+echo "-------------------------------------------------------------------------"
+echo "Please try again."
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi
+
+if [ "$(grep "$ipremove" /etc/csf/csf.allow | awk '{print $4}')" == "" ]; then
+clear
+echo "========================================================================="
+echo "IP: $ipremove is not in the CSF.Allow"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi
+
+if [ "$test_csf" == "enable" ]; then
+csf -e
+fi
+csf -ar "$ipremove"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-re-start-khoi-dong-lai-csf-lfd
+clear
+echo "========================================================================="
+echo "IP $ipremove removed from CSF.ALLOW"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+else
+echo "========================================================================= "
+echo "This funcion run with CSF Firewall"
+echo "-------------------------------------------------------------------------"
+echo "CSF Firewall is not installed ! "
+echo "-------------------------------------------------------------------------"
+read -r -p "Do you want to install CSF Firewall on this VPS [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+/etc/vpssim/menu/CSF-Fiwall/vpssim-cai-dat-csf-csf
+clear
+echo "========================================================================= "
+echo "Successfully installed and configed CSF Firewall"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+;;
+esac
+clear
+echo "========================================================================= "
+echo "You cancel install CSF Firewall ! "
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi

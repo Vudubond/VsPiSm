@@ -1,0 +1,110 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+echo "========================================================================="
+echo "Use this function to add redirect domain to server"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the domain [ENTER]: " 
+read domain
+domain=`echo $domain | tr '[A-Z]' '[a-z]'`
+if [ "$domain" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please type accurately"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi
+
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$domain" =~ $kiemtradomain3 ]]; then
+	domain=`echo $domain | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$domain maybe not a domain name!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi 
+
+
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the domain you want $domain redirect to [ENTER]: " 
+read website
+website=`echo $website | tr '[A-Z]' '[a-z]'`
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please type accurately"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a domain name!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi 
+
+
+if [ -f /etc/nginx/conf.d/$domain.conf ]; then
+clear
+echo "========================================================================="
+echo "Discover that $domain is existed in the system"
+echo "-------------------------------------------------------------------------"
+echo "If you want $domain redirect to $website"
+echo "-------------------------------------------------------------------------"
+echo "Let's remove $domain from system and try again !!!"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi
+
+if [ -f /etc/nginx/conf.d/$website.conf ]; then
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will add $domain to the system"
+echo "-------------------------------------------------------------------------"
+read -r -p "And redirect $domain to $website. Is it Ok  ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait...";sleep 1 
+        cat >> "/etc/nginx/conf.d/$website.conf" <<END
+server {
+	    server_name www.$domain $domain;
+	    rewrite ^(.*) http://$website\$1 permanent;
+    	}
+END
+	echo "-------------------------------------------------------------------------"
+echo "..... Successfully !"
+clear
+echo "========================================================================="
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+fi
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "7" ]; then 
+systemctl restart nginx.service
+fi
+echo "$domain is added to system and redirect to $website"
+/etc/vpssim/menu/vpssim-them-website-menu
+     ;;
+    *)
+clear
+        echo "========================================================================="
+echo "Cancel !"
+/etc/vpssim/menu/vpssim-them-website-menu
+        ;;
+esac
+else
+clear
+echo "========================================================================="
+echo "Do not discover $website in system!!!!"
+echo "-------------------------------------------------------------------------"
+echo "Please check and try again"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi

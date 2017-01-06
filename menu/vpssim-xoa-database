@@ -1,0 +1,77 @@
+#!/bin/bash
+
+. /home/vpssim.conf
+echo "========================================================================="
+echo "Use this function to remove database from server"
+echo "-------------------------------------------------------------------------"
+echo "After deleting database, you can not recover it, so be careful"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in database name [ENTER]: " 
+read dataname
+dataname=`echo $dataname | tr '[A-Z]' '[a-z]'`
+if [ "$dataname" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please type in accurately!"
+/etc/vpssim/menu/vpssim-them-xoa-database
+exit
+fi
+
+if [ "$dataname" = "mysql" ] || [ "$dataname" = "infomation_schema" ] || [ "$dataname" = "performance_schema" ]; then
+clear
+echo "========================================================================="
+echo "You are crazy !!! You want to delete system's data ?"
+/etc/vpssim/menu/vpssim-them-xoa-database
+exit
+fi
+
+if [ -f /var/lib/mysql/$dataname/db.opt ]; then
+echo "-------------------------------------------------------------------------"
+read -r -p "We find out $dataname, are you sured want to delete it ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait...";sleep 1 
+    cat > "/tmp/config.temp" <<END
+drop database $dataname;
+END
+
+mysql -u root -p$mariadbpass < /tmp/config.temp
+rm -f /tmp/config.temp
+
+if [ -f /bin/vpssim-backupdb-$dataname ]; then
+echo "-------------------------------------------------------------------------"
+echo "Discovered $dataname exits on Auto Backup database list"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will remove $datanase away from that list"
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+sleep 3
+rm -rf /bin/vpssim-backupdb-$dataname
+cat > "/tmp/removebackupdb" <<END
+sed --in-place '/vpssim-backupdb-$dataname/d' /etc/cron.d/vpssim.db.cron
+END
+chmod +x /tmp/removebackupdb
+/tmp/removebackupdb 
+rm -rf /tmp/removebackupdb
+service crond restart
+fi
+
+
+clear
+echo "========================================================================="
+echo "Deleted data $dataname successfully !"
+/etc/vpssim/menu/vpssim-them-xoa-database
+        ;;
+    *)
+        echo "========================================================================= "
+        ;;
+esac
+else
+clear
+echo "========================================================================="
+echo "Data $dataname is not existed or It is empty"
+/etc/vpssim/menu/vpssim-them-xoa-database
+exit
+fi
+

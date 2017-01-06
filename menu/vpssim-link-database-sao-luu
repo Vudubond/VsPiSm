@@ -1,0 +1,88 @@
+#!/bin/bash
+. /home/vpssim.conf
+code=-`date |md5sum |cut -c '1-15'`
+echo "========================================================================="
+echo "Use this function to get download link for backup file of database"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the database name [ENTER]: " 
+read databasename
+if [ "$databasename" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please fill accurately."
+/etc/vpssim/menu/vpssim-them-xoa-database
+exit
+fi
+if [ ! -f /var/lib/mysql/$databasename/db.opt ]; then
+clear
+echo "========================================================================="
+echo "Sorry, we can not find out $databasename  !"
+echo "-------------------------------------------------------------------------"
+echo "Please check again!"
+/etc/vpssim/menu/vpssim-them-xoa-database
+exit
+fi
+
+if [ ! -f  /home/$mainsite/private_html/backup/$databasename/*.sql.gz ]; then
+clear
+echo "========================================================================="
+echo "Database $databasename do not have any backup !"
+echo "-------------------------------------------------------------------------"
+echo "Please check again!"
+/etc/vpssim/menu/vpssim-them-xoa-database
+else
+find /home/$mainsite/private_html/backup/$databasename/ -name '*.sql.gz' -type f -exec basename {} \;  > /tmp/linkdatabasename
+filename=`cat /tmp/linkdatabasename`
+echo "-------------------------------------------------------------------------"
+echo "Please wait..."
+sleep 1
+########################
+#####################
+rm -rf /home/$mainsite/private_html/ListBackup$databasename*
+rm -rf /tmp/linkbackupall
+find /home/$mainsite/private_html/backup/$databasename/ -type f -exec basename {} \;  > /tmp/linkbackupall
+backupall=$(cat /tmp/linkbackupall)
+if [ "$(cat /tmp/linkbackupall | wc -l)" -gt 1 ]; then
+echo "========================================================================================================================" > /home/$mainsite/private_html/ListBackup-$databasename$code.txt
+echo "                            Link Download Backup Files For $databasename - Created by VPSSIM"  >> /home/$mainsite/private_html/ListBackup-$databasename$code.txt
+echo "========================================================================================================================" >> /home/$mainsite/private_html/ListBackup-$databasename$code.txt
+echo ""  >> /home/$mainsite/private_html/ListBackup-$databasename$code.txt
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "Most Recent Backup File (Created On $(date -r /home/$mainsite/private_html/backup/$databasename/$filename +%H:%M/%F)):" >> /home/$mainsite/private_html/ListBackup-$databasename$code.txt
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/ListBackup-$databasename$code.txt
+echo "http://$serverip:$priport/backup/$databasename/$filename" >> /home/$mainsite/private_html/ListBackup-$databasename$code.txt
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/ListBackup-$databasename$code.txt
+echo "All Backup Files:" >> /home/$mainsite/private_html/ListBackup-$databasename$code.txt
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/ListBackup-$databasename$code.txt
+for backupfile in $backupall
+do
+echo "http://$serverip:$priport/backup/$databasename/$backupfile" >> /home/$mainsite/private_html/ListBackup-$databasename$code.txt
+done
+fi
+#########################
+if [ "$(cat /tmp/linkbackupall | wc -l)" -gt 1 ]; then
+showinfo=`echo "Most Recent Backup (Created On $(date -r /home/$mainsite/private_html/backup/$databasename/$filename +%H:%M/%F)):"`
+else
+showinfo=`echo "Backup File (Created On $(date -r /home/$mainsite/private_html/backup/$databasename/$filename +%H:%M/%F)):"`
+fi
+clear
+echo "========================================================================="
+echo "Discovered backup for $databasename on server"
+echo "-------------------------------------------------------------------------"
+echo "$showinfo"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/backup/$databasename/$filename"
+if [ "$(cat /tmp/linkbackupall | wc -l)" -gt 1 ]; then
+echo "-------------------------------------------------------------------------"
+echo "List All Backup Files:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/ListBackup-$databasename$code.txt"
+fi
+rm -rf /tmp/linkbackupall
+rm -rf /tmp/linkdatabasename
+echo "" >> /home/$mainsite/private_html/ListBackup-$databasename$code.txt
+echo "===================================================The End==============================================================" >> /home/$mainsite/private_html/ListBackup-$databasename$code.txt
+
+/etc/vpssim/menu/vpssim-them-xoa-database
+exit
+fi

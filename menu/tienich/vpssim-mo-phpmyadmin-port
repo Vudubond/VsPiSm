@@ -1,0 +1,42 @@
+#!/bin/bash 
+. /home/vpssim.conf
+
+if [ "$(iptables -L -n | grep :$priport | awk 'NR==1 {print $1}')" == "ACCEPT" ]; then
+clear
+echo "========================================================================="
+echo "The Phpmyadmin port ($priport) is OPENING."
+echo "-------------------------------------------------------------------------"
+echo "You don need to re-open it! " 
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+exit
+fi
+
+echo "========================================================================="
+echo "Port ($priport) must be open If you want to access to Phpmyadmin, "
+echo "-------------------------------------------------------------------------"
+echo "view Server status  or download any file through this port"
+echo "-------------------------------------------------------------------------"
+echo "Such as: Backup files, Log files... You must open open port $priport."
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to OPEN port $priport ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "Please wait...";sleep 1
+clear
+echo "========================================================================="
+	echo "Open phpmyadmin port ($priport) successfully !"
+	echo "-------------------------------------------------------------------------"
+	echo "Now, you can access to phpmyadmin and download backup,log, CSR...files"
+	echo "-------------------------------------------------------------------------"
+	iptables -I INPUT -p tcp --dport $priport -j ACCEPT
+	service iptables save
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+        ;;
+    *)
+        clear
+echo "========================================================================="
+echo "You cancel OPEN Phpmyadmin Port (Port $priport)"
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+        ;;
+esac
+

@@ -1,0 +1,92 @@
+#!/bin/bash 
+. /home/vpssim.conf
+if [ -f /etc/vpssim/vps_backup_rsync.info ]; then
+if [ ! "$(grep "thanhcong" /etc/vpssim/vps_backup_rsync.info | awk '{print $3}')" == "" ]; then
+clear
+echo "========================================================================="
+echo "You have completed config connection for current server with vps backup"
+echo "-------------------------------------------------------------------------"
+echo "IP address of VPS Backup: $(grep "ipaddress" /etc/vpssim/vps_backup_rsync.info | awk '{print $3}')"
+/etc/vpssim/menu/vpssim-rsync-backup-vps-menu
+exit
+fi
+
+fi
+echo "========================================================================="
+echo "Use this function to connect current server with vps backup. "
+echo "-------------------------------------------------------------------------"
+echo "After config connection complete, use [Setting Time Sync] function to set"
+echo "-------------------------------------------------------------------------"
+echo "the time sync from current server to vps backup."
+echo "-------------------------------------------------------------------------"
+echo "Information request in vps backup: IP Address and Root's Password"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in IP address of VPS backup [ENTER]: " 
+read ipvpsbackup
+if [ "$ipvpsbackup" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please fill accurately."
+/etc/vpssim/menu/vpssim-rsync-backup-vps-menu
+exit
+fi
+
+if [ ! "$(ping -c 1 $ipvpsbackup | tail -n +1 | head -1 | awk 'NR==1 {print $1}')" == "PING" ]; then
+clear
+echo "========================================================================="
+echo "$ipvpsbackup is not a valid IP/CIDR ! "
+echo "-------------------------------------------------------------------------"
+echo "Please try again."
+/etc/vpssim/menu/vpssim-rsync-backup-vps-menu
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the Root's password [ENTER]: "
+read passrootbackupvps
+if [ "$passrootbackupvps" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please fill accurately."
+/etc/vpssim/menu/vpssim-rsync-backup-vps-menu
+exit
+fi
+if [ -f ~/.ssh/known_hosts ]; then
+if [ ! "$(grep "$ipvpsbackup" ~/.ssh/known_hosts)" == "" ]; then
+echo "-------------------------------------------------------------------------"
+echo "sed -i '/$ipvpsbackup/d' ~/.ssh/known_hosts" > /tmp/knownhost_sedit
+chmod +x /tmp/knownhost_sedit
+/tmp/knownhost_sedit
+rm -rf /tmp/knownhost_sedit
+fi
+fi
+
+cat > "/tmp/rsync_ketnoi" <<END
+echo "-------------------------------------------------------------------------"
+sshpass -p '$passrootbackupvps' ssh-copy-id -i ~/.ssh/id_rsa.pub $ipvpsbackup > /tmp/abc
+END
+chmod +x /tmp/rsync_ketnoi
+/tmp/rsync_ketnoi
+rm -rf /tmp/rsync_ketnoi
+rm -rf /tmp/abc
+checkconnect=$(ssh -o BatchMode=yes -o ConnectTimeout=9 root@$ipvpsbackup echo connected 2>&1)
+if [[ ! $checkconnect == connected ]] ; then
+clear
+echo "========================================================================="
+echo "Connection Failed !"
+echo "-------------------------------------------------------------------------"
+echo "Please check your vps backup login information"
+/etc/vpssim/menu/vpssim-rsync-backup-vps-menu
+exit
+fi
+cat > "/etc/vpssim/vps_backup_rsync.info" <<END
+ipaddress = $ipvpsbackup
+ketnoistatus = thanhcong
+END
+clear
+echo "========================================================================="
+echo "Connection to VPS backup successful ! "
+echo "-------------------------------------------------------------------------"
+echo "Now you can configure the sync time for server"
+/etc/vpssim/menu/vpssim-rsync-backup-vps-menu
+exit
+

@@ -1,0 +1,86 @@
+#!/bin/bash
+. /home/vpssim.conf
+if [ ! -f /etc/pure-ftpd/pure-ftpd.conf ]; then
+clear
+echo "========================================================================= "
+echo "FTP server is not installed. "
+echo "-------------------------------------------------------------------------"
+echo "You must run Setup FTP server function first !"
+/etc/vpssim/menu/vpssim-ftpserver-menu
+exit
+fi
+
+echo "========================================================================="
+echo "Use this function to remove FTP account for website"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the website [ENTER]: " 
+read website
+
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, Please type in accurately !"
+/etc/vpssim/menu/vpssim-ftpserver-menu
+exit
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a domain name "
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-ftpserver-menu
+exit
+fi
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "Can not discover $website"
+echo "-------------------------------------------------------------------------"
+echo "Please try again ."
+/etc/vpssim/menu/vpssim-ftpserver-menu
+exit
+fi
+if [ "$(pure-pw list | grep "/home/$website/")" == "" ]; then
+clear
+echo "========================================================================="
+echo "There's no FTP account for $website"
+/etc/vpssim/menu/vpssim-ftpserver-menu
+fi
+ftpuser=$(grep "/home/$website/" /etc/vpssim/FTP-Account.info | awk 'NR==1 {print $7}')
+echo "-------------------------------------------------------------------------"
+echo "Discover FTP account $ftpuser for $website"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to remove it ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+#sudo userdel $ftpuser  ##Xoa User Centos
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+sleep 1
+pure-pw userdel $ftpuser
+pure-pw mkdb
+cat > "/tmp/xoaftpuser" <<END	
+sed -i '/\/home\/$website/d' /etc/vpssim/FTP-Account.info
+END
+chmod +x /tmp/xoaftpuser
+/tmp/xoaftpuser
+rm -rf /tmp/xoaftpuser
+clear
+echo "========================================================================="
+echo "Remove FTP account: $ftpuser for $website successful !"
+/etc/vpssim/menu/vpssim-ftpserver-menu
+exit
+ ;;
+    *)
+        echo ""
+        ;;
+esac
+clear
+echo "=========================================================================" 
+echo "Cancel remove FTP account for $website "
+/etc/vpssim/menu/vpssim-ftpserver-menu
+fi
+

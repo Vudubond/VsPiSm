@@ -1,0 +1,32 @@
+#!/bin/sh
+. /home/vpssim.conf
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+if [ "$(/sbin/service mysql status | awk 'NR==1 {print $3}')" == "running" ]; then
+clear
+/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+else
+clear
+echo "========================================================================="
+echo "Sorry, MariaDB stopped. Start it before use this function!"
+echo "-------------------------------------------------------------------------"
+echo "You can start it by command [ service mysql start ]"
+vpssim
+exit
+fi
+fi
+
+
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "7" ]; then 
+if [ "$(service mysql status | awk 'NR==1 {print $3}')" == "running" ]; then
+clear
+/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database
+else
+clear
+echo "========================================================================="
+echo "Sorry, MariaDB stopped. Start it before use this function!"
+echo "-------------------------------------------------------------------------"
+echo "You can start it by command [ service mysql start ]"
+vpssim
+exit
+fi
+fi

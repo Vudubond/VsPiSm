@@ -1,0 +1,37 @@
+#!/bin/sh
+. /home/vpssim.conf
+echo "========================================================================="
+echo "A full backup of your home directory may take long time "
+echo "-------------------------------------------------------------------------"
+echo "and hard disk space to store the backup file. "
+echo "-------------------------------------------------------------------------"
+read -r -p "You definitely want to backup folder Home ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+backuphomename=`date |md5sum |cut -c '1-12'`
+echo "We are backing up folder Home in server..... "
+sleep 3
+rm -rf /home/$mainsite/private_html/backup/home/*
+cd /usr/local
+zip -r $serverip-$website$backuphomename.zip /home
+mkdir -p /home/$mainsite/private_html/backup/home
+mv $serverip-$website$backuphomename.zip /home/$mainsite/private_html/backup/home/$serverip-$website$backuphomename.zip
+clear
+echo "========================================================================="
+echo "Link file backup:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/backup/home/$serverip-$website$backuphomename.zip"
+/etc/vpssim/menu/vpssim-sao-luu
+exit
+
+ ;;
+    *)
+        echo ""
+        ;;
+esac
+clear
+echo "========================================================================="
+echo "Cancel create backup file."
+/etc/vpssim/menu/vpssim-sao-luu
+

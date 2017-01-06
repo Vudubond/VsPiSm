@@ -1,0 +1,65 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+rans=`date |md5sum |cut -c '1-5'`
+  echo "========================================================================="
+  echo "Use this function to view commment status in wordpress website"
+  echo "========================================================================="
+echo -n "Type in website: " 
+read website
+
+if [ "$website" = "" ]; then
+echo "========================================================================="
+echo "You typed wrong, please type in accurately!."
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a dmomain name"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "Can not discover $website"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ ! -f /home/$website/public_html/wp-config.php ]; then
+clear
+echo "========================================================================="
+echo "$website maybe not a wordrepess website or not install wp code"
+echo "-------------------------------------------------------------------------"
+echo "Please setup wordpress code first or try an other domain"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+
+echo "========================================================================="
+echo "Discovered $website in system"
+echo "-------------------------------------------------------------------------"
+echo "$website using wordpress code"
+echo "-------------------------------------------------------------------------"
+echo "Preparing to get comments status"
+echo "-------------------------------------------------------------------------"
+echo "Please wait ...."
+sleep 1
+clear
+echo "========================================================================="
+echo "Commment Status for $website"
+echo "-------------------------------------------------------------------------"
+cd /home/$website/public_html
+wp comment count --allow-root
+cd
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+
+

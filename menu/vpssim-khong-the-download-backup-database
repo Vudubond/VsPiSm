@@ -1,0 +1,21 @@
+#!/bin/bash
+. /home/vpssim.conf
+clear
+echo "========================================================================="
+echo "You can not download files because one of the following reasons:"
+echo "-------------------------------------------------------------------------"
+echo "I. YOU CLOSE PHPMYADMIN PORT IN [Phpmyadmin Manage] FUNCTION"
+echo "-------------------------------------------------------------------------"
+echo "Fix by go to [Phpmyadmin Manage] and choose [Open Phpmyadmin Port]"
+echo "-------------------------------------------------------------------------"
+echo "II. CSF BLOCK YOUR IP ADDRESS TO PORT $priport"
+echo "-------------------------------------------------------------------------"
+echo "Fix that by:"
+echo "-------------------------------------------------------------------------"
+echo "Using function [Unblock all IP] in [CSF Firewall Manage]"
+echo "-------------------------------------------------------------------------"
+echo "Or add your IP to Csf.allow by [Add IP to CSF.Allow]"
+echo "========================================================================="
+read -p "Press [Enter] to exit ..."
+clear
+/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-database

@@ -1,0 +1,30 @@
+#!/bin/bash 
+. /home/vpssim.conf
+
+if [ "$(redis-cli ping)" = "PONG" ]; then
+echo "========================================================================="
+echo "This function will check Redis Status for 30 seconds" 
+echo "-------------------------------------------------------------------------"
+echo "And VPSSIM auto comeback to Redis Manage Menu"
+echo "-------------------------------------------------------------------------"
+echo "Atfer press [ Enter ], you go to the website you config using Redis cache"
+echo "-------------------------------------------------------------------------"
+echo "And see Redis status below this line "
+echo "========================================================================="
+read -p "Press [Enter] to start check ..."
+timeout 30 redis-cli monitor
+clear
+
+echo "========================================================================="
+echo "Check Redis Finished !"
+echo "-------------------------------------------------------------------------"
+echo "Redis is Working"
+/etc/vpssim/menu/vpssim-redis-menu
+else
+clear
+echo "========================================================================="
+echo "Redis Cache current Stopped"
+echo "-------------------------------------------------------------------------"
+echo "Please start it by command [ service redis start ]"
+/etc/vpssim/menu/vpssim-redis-menu
+fi

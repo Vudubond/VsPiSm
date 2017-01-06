@@ -1,0 +1,86 @@
+#!/bin/sh
+if [ ! -f /etc/vpssim/btsync.info ]; then
+clear
+echo "========================================================================="
+echo "Your server has not installed BTSync yet !"
+/etc/vpssim/menu/vpssim-bitsync-menu
+exit 
+fi
+bitsyncstt=`pgrep -fu root /usr/bin/btsync`
+    if [ ! -z "$bitsyncstt" ]; then
+echo "========================================================================="
+echo "Use this function to ENABLE/DISABLE BitTorrent Sync in server"
+echo "-------------------------------------------------------------------------"
+echo "Current BitTorrent Sync is ENABLED"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to DISABLE BitTorrent Sync ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY])
+      echo "-------------------------------------------------------------------------"
+    echo "Please wait...." && sleep 1 
+killall -q btsync
+pkill btsync
+rm -rf /etc/btsync-vpssim/.sync/*.pid
+rm -rf /etc/btsync-vpssim/.btsync/*.pid
+	clear
+	clear
+	echo "========================================================================="
+	echo "BitTorrent Sync DISABLE successfully !"
+	/etc/vpssim/menu/vpssim-bitsync-menu
+        ;;
+    *)
+       clear
+       echo "========================================================================="
+        echo "Cancel DISABLE BitTorrent Sync....!"
+        /etc/vpssim/menu/vpssim-bitsync-menu
+        ;;
+esac
+else
+echo "========================================================================="
+echo "Use this function to ENABLE/DISABLE BitTorrent Sync in server"
+echo "-------------------------------------------------------------------------"
+echo "Current BitTorrent Sync is DISABLED"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to ENALBE BitTorrent Sync ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY])
+     echo "-------------------------------------------------------------------------"
+    echo "Please wait...." && sleep 1
+/usr/bin/btsync --config /etc/btsync-vpssim/sync.conf
+checksize=$(du -sb /usr/bin/btsync | awk 'NR==1 {print $1}')
+if [ $checksize -gt 9000000 ]; then   
+	if [ -f /etc/btsync-vpssim/.sync/*.pid ]; then
+	clear
+	echo "========================================================================="
+	echo "BitTorrent Sync ENABLE successfully"
+	/etc/vpssim/menu/vpssim-bitsync-menu
+	else
+	clear
+	echo "========================================================================="
+	echo "Can not ENABLE BitTorent Sync !!!!"
+	/etc/vpssim/menu/vpssim-bitsync-menu
+	fi
+else  
+	if [ -f /etc/btsync-vpssim/.btsync/*.pid ]; then
+	clear
+	echo "========================================================================="
+	echo "BitTorrent Sync ENABLE successfully"
+	/etc/vpssim/menu/vpssim-bitsync-menu
+	else
+	clear
+	echo "========================================================================="
+	echo "Can not ENABLE BitTorent Sync !"
+	/etc/vpssim/menu/vpssim-bitsync-menu
+	fi
+fi
+        ;;
+    *)
+        clear
+        	clear
+	echo "========================================================================="
+	echo "Cancel ENABLE BitTorrent Sync"
+	/etc/vpssim/menu/vpssim-bitsync-menu
+        ;;
+esac  
+exit
+fi

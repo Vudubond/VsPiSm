@@ -1,0 +1,112 @@
+#!/bin/sh
+. /home/vpssim.conf
+if [ ! -f /etc/vpssim/btsync.info ]; then
+clear
+echo "========================================================================="
+echo "Your server has not installed BTSync yet !"
+/etc/vpssim/menu/vpssim-bitsync-menu
+exit 
+fi
+echo "========================================================================="
+echo "Use this function to change BitTorret Sync Port Using. BTSync Port must"
+echo "-------------------------------------------------------------------------"
+echo "not be the same with SSH port, Phpmyadmin Port. And must be a number"
+echo "-------------------------------------------------------------------------"
+echo "within range of (30000 - 50000)."
+echo "-------------------------------------------------------------------------"
+echo -n "Type in new port for BitTorrent Sync [ENTER]: " 
+read btsyncport
+if [ "$btsyncport" = "" ]; then
+clear
+echo "========================================================================="
+echo "You must type in the port for BTsync"
+echo "-------------------------------------------------------------------------"
+echo "BTSync port must be a number within range of (30000 - 50000) !" 
+/etc/vpssim/menu/vpssim-bitsync-menu
+exit
+fi
+if [ "$priport" = "$btsyncport" ]; then
+clear
+echo "========================================================================="
+echo "Port you typed in similar to phpmyadmin port!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-bitsync-menu
+exit
+fi
+if [[ ! ${btsyncport} =~ ^[0-9]+$ ]] ;then 
+clear
+echo "========================================================================="
+echo "The Port you typed in: ${btsyncport} is wrong."
+echo "-------------------------------------------------------------------------"
+echo "BTsync port must be a number within range of (30000 - 50000) !" 
+/etc/vpssim/menu/vpssim-bitsync-menu
+exit
+fi
+if ! [[ $btsyncport -ge 30000 && $btsyncport -le 50000  ]] ; then  
+clear
+echo "========================================================================="
+echo "The Port you typed in: ${btsyncport} is wrong."
+echo "-------------------------------------------------------------------------"
+echo "BTsync port must be a number within range of (30000 - 50000) !" 
+/etc/vpssim/menu/vpssim-bitsync-menu
+exit
+fi 
+ echo "-------------------------------------------------------------------------"
+echo "Please wait...." && sleep 1
+killall -q btsync
+rm -rf /etc/btsync-vpssim/.sync/sync.pid
+yes | cp -rf /etc/vpssim/btsync.info /tmp/btsync.info
+ cat > "/etc/vpssim/btsync.info" <<END
+{username = $(grep username /tmp/btsync.info | awk 'NR==1 {print $3}')
+password = $(grep password /tmp/btsync.info | awk 'NR==1 {print $3}')
+btport = $btsyncport
+}
+END
+cat > "/etc/btsync-vpssim/sync.conf" <<END
+{ 
+  "device_name": "vpssim",
+  "listening_port" : 0,
+  "storage_path" : "/etc/btsync-vpssim/.sync",
+  "check_for_updates" : false, 
+  "use_upnp" : true,
+  "download_limit" : 0,                       
+  "upload_limit" : 0, 
+  "webui" :
+  {
+    "listen" : "0.0.0.0:$btsyncport",
+    "login" : "$(grep username /tmp/btsync.info | awk 'NR==1 {print $3}')",
+    "password" : "$(grep password /tmp/btsync.info | awk 'NR==1 {print $3}')"
+  }
+}
+END
+checksize=$(du -sb /usr/bin/btsync | awk 'NR==1 {print $1}')
+if [ $checksize -gt 9000000 ]; then
+sed -i 's/\.sync/\.btsync/g' /etc/btsync-vpssim/sync.conf
+fi
+echo "========================================================================= "
+echo "Close old Port : $(grep btport /tmp/btsync.info | awk 'NR==1 {print $3}') and Open new port: $(grep btport /etc/vpssim/btsync.info | awk 'NR==1 {print $3}')"
+sleep 3
+iptables -I INPUT -p tcp --dport $(grep btport /tmp/btsync.info | awk 'NR==1 {print $3}') -j DROP
+iptables -I INPUT -p tcp --dport $(grep btport /etc/vpssim/btsync.info | awk 'NR==1 {print $3}') -j ACCEPT
+service iptables save
+rm -rf /tmp/btsync.info
+/usr/bin/btsync --config /etc/btsync-vpssim/sync.conf
+clear 
+echo "========================================================================= "
+echo "Change port BitTorrent Sync complete "
+echo "-------------------------------------------------------------------------"
+echo "Manage infomation:"
+echo "-------------------------------------------------------------------------"
+echo "Btsync Link: http://$serverip:$(grep btport /etc/vpssim/btsync.info | awk 'NR==1 {print $3}')"
+echo "-------------------------------------------------------------------------"
+echo "User: $(grep username /etc/vpssim/btsync.info | awk 'NR==1 {print $3}') | Password: $(grep password /etc/vpssim/btsync.info | awk 'NR==1 {print $3}')"
+/etc/vpssim/menu/vpssim-bitsync-menu
+esac
+ clear 
+echo "========================================================================= "
+echo "Cancel change BitTorrent Sync port "
+/etc/vpssim/menu/vpssim-bitsync-menu
+
+
+

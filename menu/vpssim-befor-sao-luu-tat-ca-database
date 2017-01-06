@@ -1,0 +1,22 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+echo "========================================================================= "
+echo "Use this function to backup all database to only one backup file"
+echo "-------------------------------------------------------------------------"
+echo "You can only restore all database in one time, can not restore single "
+echo "-------------------------------------------------------------------------"
+echo "database from this backtup file"
+echo "========================================================================= "
+read -r -p "You want to full backup database ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+/etc/vpssim/menu/vpssim-sao-luu-tat-ca-database
+;;
+esac
+clear
+echo "========================================================================= "
+echo "You cancel backup all databases ! "
+/etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-tat-ca-database-menu
+exit
+fi

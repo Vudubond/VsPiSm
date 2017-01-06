@@ -1,0 +1,34 @@
+#!/bin/sh
+. /home/vpssim.conf
+echo "========================================================================="
+echo "With less RAM server, sometime free RAM is too low, MySQL service is stop"
+echo "-------------------------------------------------------------------------"
+echo "After you enable [Auto re-start MySQL Server] function"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will check MySQL status every 5 minutes, If MySQL service stop"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will re-Start it within a maximum of 5 minnutes."
+echo "========================================================================="
+read -r -p "You want to enable [Auto re-start MySQL Server] function ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY])  
+    echo "-------------------------------------------------------------------------" 
+    echo "Please wait..."
+sleep 1
+\cp -uf /etc/vpssim/menu/tienich/vpssim-auto-start-mysql /bin/vpssim-auto-start-mysql
+chmod +x /bin/vpssim-auto-start-mysql
+echo "SHELL=/bin/sh" > /etc/cron.d/vpssim-auto-start-mysql.cron
+echo "*/5 * * * * root /bin/vpssim-auto-start-mysql >/dev/null 2>&1" >> /etc/cron.d/vpssim-auto-start-mysql.cron
+service crond restart
+    clear
+    echo "========================================================================="
+echo "Enable [Auto re-start MySQL Server] function successfully !"
+/etc/vpssim/menu/vpssim-them-xoa-database
+        ;;
+    *)
+       clear
+    echo "========================================================================="
+   echo "You cancel Enable  [Auto re-start MySQL Server] function !"
+/etc/vpssim/menu/vpssim-them-xoa-database
+        ;;
+esac

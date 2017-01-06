@@ -1,0 +1,40 @@
+#!/bin/bash 
+. /home/vpssim.conf
+
+if [ "$(iptables -L -n | grep :$priport | awk 'NR==1 {print $1}')" == "DROP" ]; then
+clear
+echo "========================================================================="
+echo "The Phpmyadmin port ($priport) is CLOSSING."
+echo "-------------------------------------------------------------------------"
+echo "You don need to re-close it! " 
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+exit
+fi
+
+echo "========================================================================="
+echo "If you close Phpmyadmin port (port: $priport), you can not access to"
+echo "-------------------------------------------------------------------------"
+echo "Phpmyadmin, view status and can not download any file through this port"
+echo "-------------------------------------------------------------------------"
+echo "Such as: Backup files, Log files..."
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to CLOSE port $priport?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "Please wait...";sleep 1
+clear
+echo "========================================================================="
+	echo "Close phpmyadmin port ($priport) successfully !"
+	echo "-------------------------------------------------------------------------"
+	iptables -I INPUT -p tcp --dport $priport -j DROP
+	service iptables save
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+        ;;
+    *)
+        clear
+echo "========================================================================="
+echo "You cancel CLOSE Phpmyadmin port (Port $priport)"
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+        ;;
+esac
+

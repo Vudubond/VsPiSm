@@ -1,0 +1,54 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+
+echo "========================================================================="
+echo -n "Type in the Port you want to check [ENTER]: " 
+read portservice
+if [ "$portservice" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please fill accurately"
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+
+if [[ ! ${portservice} =~ ^[0-9]+$ ]] ;then 
+clear
+echo "========================================================================="
+echo "The port you type in: ${portservice} is not a number."
+echo "-------------------------------------------------------------------------"
+echo "Please try again !" 
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+if ! [[ $portservice -ge 1 && $portservice -le 65535  ]] ; then  
+clear
+echo "========================================================================="
+echo "$portservice is wrong!"
+echo "-------------------------------------------------------------------------"
+echo "The Port must be a number within range of (1 - 65535)."
+echo "-------------------------------------------------------------------------"
+echo "Please try again !" 
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi  
+
+test_port=$(lsof -i:$portservice | awk 'NR==1 {print $1}')
+if [ "$test_port" == "" ]; then
+clear
+echo "========================================================================= "
+echo "No service using port $portservice "
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+echo "Please wait...";sleep 1
+clear
+echo "========================================================================="
+echo "Services using port $portservice: "
+echo "-------------------------------------------------------------------------"
+lsof -i:$portservice
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+fi

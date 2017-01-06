@@ -1,0 +1,106 @@
+#!/bin/bash
+. /home/vpssim.conf
+echo "========================================================================="
+echo "Use this function to fix [Missed Schedule] error for Wordpress Website" 
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will install plugin: [WP Missed Schedule] for your WP website and"
+echo "-------------------------------------------------------------------------"
+echo "auto acctive it. This plugin will run every 5 mins and republish missed "
+echo "-------------------------------------------------------------------------"
+echo "post correctly without waste server's resources."
+echo "========================================================================="
+echo -n "Type in website [ENTER]: " 
+read website
+website=`echo $website | tr '[A-Z]' '[a-z]'`
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please fill accurately."
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a domain name!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "$website is not exist in the system!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ ! -f /home/$website/public_html/wp-config.php ]; then
+clear
+echo "========================================================================="
+echo "$website not using wordpress code or did not finish setup!"
+echo "-------------------------------------------------------------------------"
+echo "Please setup wordpress first or try with other domain"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ -d /home/$website/public_html/wp-content/plugins/wp-missed-schedule ]; then
+clear
+echo "========================================================================="
+echo "You have installed plugin wp-missed-schedule for $website!"
+echo "-------------------------------------------------------------------------"
+echo "Please acctive it if you are disabling it."
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+
+echo "========================================================================="
+read -r -p "You want to fix Missed Schedule error for $website ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait..."    		
+    sleep 1
+cd /tmp
+rm -rf /tmp/wp-missed-schedule.zip
+wget -q --no-check-certificate https://vpssim.com/script/vpssim/Softwear/wp-missed-schedule.zip
+if [ ! -f /tmp/wp-missed-schedule.zip ]; then
+wget -q --no-check-certificate https://vpssim.com/script/vpssim/Softwear/wp-missed-schedule.zip
+fi
+unzip -q wp-missed-schedule.zip -d /home/$website/public_html/wp-content/plugins/
+rm -rf /tmp/wp-missed-schedule.zip
+chown -R nginx:nginx /home/$website/public_html/wp-content/plugins/wp-missed-schedule/*
+cd /home/$website/public_html
+/etc/vpssim/menu/vpssim-enable-tat-ca-cac-ham-php-php.ini
+wp plugin activate wp-missed-schedule --allow-root
+/etc/vpssim/menu/vpssim-re-config-cac-ham-php-disable-php.ini
+cd
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service php-fpm restart
+else
+systemctl restart php-fpm.service
+fi
+clear
+echo "========================================================================="
+if [ -d /home/$website/public_html/wp-content/plugins/wp-missed-schedule ]; then
+echo "Fix Missed Schedule Error for $website successfully !"
+else
+echo "Fix Missed Schedule Error for $website failed !"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+fi
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+        ;;
+    *)
+       clear
+    echo "========================================================================="
+   echo "You cancel Fix Error Missed Schedule for $website"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+        ;;
+esac
+exit
+

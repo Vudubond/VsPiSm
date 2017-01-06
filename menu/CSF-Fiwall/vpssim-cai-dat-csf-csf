@@ -1,0 +1,26 @@
+#!/bin/bash 
+. /home/vpssim.conf
+if [ -f /etc/csf/csf.conf ]; then
+clear
+echo "========================================================================= "
+echo "CSF Firewall was installed & configured on this VPS!"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+else
+	echo "-------------------------------------------------------------------------"
+echo "Install starting...."
+sleep 2
+/etc/vpssim/menu/vpssim-cai-csf-firewall-cai-dat-CSF-FIREWALL
+
+if [ -f /etc/csf/csf.conf ]; then
+clear
+echo "========================================================================= "
+echo "Successfully installed and configured CSF Firewall !"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+else
+clear
+echo "========================================================================= "
+echo "Setup CSF Firewall false ! Please try again !"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+fi
+fi
+

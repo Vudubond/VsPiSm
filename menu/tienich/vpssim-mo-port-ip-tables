@@ -1,0 +1,66 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+
+echo "========================================================================="
+echo "Use this function to open port for server via IPtables "
+echo "-------------------------------------------------------------------------"
+echo -n "Type in Port you want to OPEN [ENTER]: " 
+read portopen
+if [ "$portopen" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please fill accurately"
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+if [[ ! ${portopen} =~ ^[0-9]+$ ]] ;then 
+clear
+echo "========================================================================="
+echo "The port you type in: ${portopen} is not a number."
+echo "-------------------------------------------------------------------------"
+echo "Please try again !" 
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+if ! [[ $portopen -ge 1 && $portopen -le 65535  ]] ; then  
+clear
+echo "========================================================================="
+echo "$portopen is wrong!"
+echo "-------------------------------------------------------------------------"
+echo "The Port must be a number within range of (1 - 65535)."
+echo "-------------------------------------------------------------------------"
+echo "Please try again !" 
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi  
+if [ $portopen = $priport ]; then
+clear
+echo "========================================================================="
+echo "Port $portopen is Phpmyadmin port. Please use function "
+echo "-------------------------------------------------------------------------"
+echo "[Open/Close Phpmyadmin Port] if you want to Open/Close port $portopen !" 
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+if [ "$(iptables -L -n | grep :$portopen | awk 'NR==1 {print $1}')" == "ACCEPT" ]; then
+clear
+echo "========================================================================="
+echo "Port $portopen is OPENING."
+echo "-------------------------------------------------------------------------"
+echo "You don need to re-open it! " 
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo "Please wait...";sleep 1
+clear
+echo "========================================================================="
+echo "The port you want to OPEN: $portopen"
+echo "-------------------------------------------------------------------------"
+iptables -I INPUT -p tcp --dport $portopen -j ACCEPT
+service iptables save
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+exit
+fi
+fi

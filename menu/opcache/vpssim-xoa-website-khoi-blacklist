@@ -1,0 +1,107 @@
+#!/bin/bash
+
+. /home/vpssim.conf
+if [ ! -f /etc/php.d/opcache.ini ]; then
+clear
+echo "========================================================================="
+echo "Zend Opcache current DISABLE"
+echo "-------------------------------------------------------------------------"
+echo "Please enable it to use this function"
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+fi
+echo "========================================================================="
+echo "Use this function to remove website in Zend Opcache Blacklist."
+echo "========================================================================="
+echo -n "Type in website [ENTER]: " 
+read website
+
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "You type wrong. Please try again !"
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+exit
+fi
+
+
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a domain name !"
+echo "-------------------------------------------------------------------------"
+echo "Please try again  !"
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+exit
+fi
+
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "$website do not exit in system"
+echo "-------------------------------------------------------------------------"
+echo "Please type in othe domain"
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+exit
+fi
+if [ "$(grep /home/$website /etc/vpssim/opcache.blacklist)" == "" ]; then
+clear
+echo "========================================================================="
+echo "$website do not exit in Zend Opcache Blacklist"
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo "Discovered $website in Zend Opcache Blacklist"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will delete $website in Zend Opcache Blacklist"
+echo "-------------------------------------------------------------------------"
+echo "Please wait..."; sleep 4
+echo "-------------------------------------------------------------------------"
+rm -rf /tmp/zendcacheblacklist
+cat > "/tmp/zendcacheblacklist" <<END
+sed --in-place '\/home\/$website/d' /etc/vpssim/opcache.blacklist
+END
+chmod +x /tmp/zendcacheblacklist
+/tmp/zendcacheblacklist
+rm -rf /tmp/zendcacheblacklist
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service php-fpm restart
+else
+systemctl restart php-fpm.service
+fi
+clear
+echo "========================================================================="
+echo "Remove $website from Zend Opcache Blacklist suscessful !"
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

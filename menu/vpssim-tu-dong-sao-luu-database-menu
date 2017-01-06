@@ -1,0 +1,51 @@
+#!/bin/bash
+. /home/vpssim.conf
+rm -rf /tmp/*hostingaz*
+code=`date |md5sum |cut -c '1-12'`
+ls -l /var/lib/mysql | grep "^d" | awk -F" " '{print $9}' | grep -Ev "(Database|information_schema|mysql|performance_schema|vpssimCheckDB)" > /tmp/listdabasehostingaz
+checksize=$(du -sb /tmp/listdabasehostingaz | awk 'NR==1 {print $1}')
+   if [ "$checksize" == "0" ]; then
+   clear
+   echo "========================================================================="
+   echo "There's no database has data on system !"
+   /etc/vpssim/menu/vpssim-them-xoa-database
+   exit
+   fi
+sodatabasetrenserver=$(cat /tmp/listdabasehostingaz | wc -l)
+listdatabasetrenserver=$(cat /tmp/listdabasehostingaz)
+mkdir -p /tmp/saoluudatabasethanhconghostingaz
+mkdir -p /tmp/saoluudatabasethatbaihostingaz
+rm -rf /tmp/*check*
+for database in $listdatabasetrenserver 
+do
+if [ ! "$(ls -1 /var/lib/mysql/$database | wc -l)" == "1" ]; then
+echo "$database" >> /tmp/checkdatabase-list
+fi
+ done
+
+if [ ! -f /tmp/checkdatabase-list ]; then
+rm -rf /tmp/*hostingaz*
+rm -rf /tmp/*list*
+clear
+echo "========================================================================="
+echo "There's no database has data on system"
+echo "--------------------------------------------------------------------------"
+echo "You do not need using this function !"
+/etc/vpssim/menu/vpssim-them-xoa-database
+exit
+fi
+prompt="Type in your choice:"
+options=("Enable/Disable Auto Backup Database" "List Database Enabled Auto Backup")
+printf "=========================================================================\n"
+PS3="$prompt"
+select opt in "${options[@]}" "Exit"; do 
+
+    case "$REPLY" in
+    1 ) /etc/vpssim/menu/vpssim-befor-chon-tat-bat-tu-dong-sao-luu-database;;
+    2 ) /etc/vpssim/menu/vpssim-danh-sach-data-tu-dong-sao-luu-database;;
+    
+    $(( ${#options[@]}+1 )) ) echo "";  clear && /etc/vpssim/menu/vpssim-them-xoa-database;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+
+    esac
+done

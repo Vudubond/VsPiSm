@@ -1,0 +1,36 @@
+#!/bin/sh
+. /home/vpssim.conf
+echo "========================================================================="
+echo "With some error code, if set [display_errors = Off] in php.ini will make"
+echo "-------------------------------------------------------------------------"
+echo "website show only blank white pages. Fix it by set [display_errors = On]"
+echo "-------------------------------------------------------------------------"
+echo "If your website is fine, we recommend set [display_errors = Off]"
+echo "========================================================================="
+echo "Current: DISPLAY ERRORS = ON "
+echo "========================================================================="
+read -r -p "You want to set [display_errors = Off] in php.ini ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    
+sed -i.bak "s,display_errors = On,display_errors = Off,g" /etc/php.ini
+    echo "Please wait..."
+sleep 1
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service php-fpm restart
+fi
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "7" ]; then 
+systemctl restart php-fpm.service
+fi
+    clear
+    echo "========================================================================="
+echo "Set [display_errors = Off] in php.ini successfully"
+/etc/vpssim/menu/vpssim-config-php.ini-menu
+        ;;
+    *)
+       clear
+    echo "========================================================================="
+   echo "You cancel Change [display_errors] 's value !"
+/etc/vpssim/menu/vpssim-config-php.ini-menu
+        ;;
+esac

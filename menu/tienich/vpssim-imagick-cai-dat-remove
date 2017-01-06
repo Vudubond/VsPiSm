@@ -1,0 +1,90 @@
+#!/bin/bash
+
+. /home/vpssim.conf
+
+if [ -f /etc/php.d/imagick.ini ]; then
+echo "========================================================================="
+echo "Use this function to Setup / Remove Imagick for server"
+echo "-------------------------------------------------------------------------"
+echo "Imagick has installed in server"
+echo "-------------------------------------------------------------------------"
+read -r -p "Do you want to remove Imagick ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait....";sleep 1
+/etc/vpssim/menu/vpssim-enable-tat-ca-cac-ham-php-php.ini
+rm -r -f /etc/php.d/imagick.ini 
+pecl uninstall imagick
+/etc/vpssim/menu/vpssim-re-config-cac-ham-php-disable-php.ini
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service php-fpm restart
+echo "-------------------------------------------------------------------------"
+fi
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "7" ]; then 
+systemctl restart php-fpm.service
+fi
+clear
+echo "========================================================================="
+
+	echo "Uninstall Imagick successfully !"
+/etc/vpssim/menu/vpssim-tien-ich
+        ;;
+    *)
+       clear
+    echo "========================================================================="
+   echo "You cancel remove IMAGICK"
+/etc/vpssim/menu/vpssim-tien-ich
+        ;;
+esac
+exit
+fi
+echo "========================================================================="
+echo "Use this function to Setup / Remove Imagick for server"
+echo "-------------------------------------------------------------------------"
+echo "Imagick is not installed"
+echo "-------------------------------------------------------------------------"
+read -r -p "Do you want to install Imagick ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait....";sleep 1
+/etc/vpssim/menu/vpssim-enable-tat-ca-cac-ham-php-php.ini
+rm -r -f /etc/php.d/imagick.ini 
+pecl uninstall imagick
+################################################
+yes "" | pecl install imagick
+php_version=$(php -r "echo PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION;")
+if [ "$php_version" == "5.4" ]; then
+duongdanimagick=$(find / -name 'imagick.so' | grep php/modules/imagick.so)
+echo "extension=$duongdanimagick" >> /etc/php.d/imagick.ini
+else
+echo "extension=imagick.so" > /etc/php.d/imagick.ini
+fi
+wget --no-check-certificate -q https://vpssim.com/script/vpssim/check-imagick.php.zip -O /home/$mainsite/private_html/check-imagick.php
+/etc/vpssim/menu/vpssim-re-config-cac-ham-php-disable-php.ini
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service php-fpm restart
+else
+systemctl restart php-fpm.service
+fi
+clear
+echo "========================================================================="
+echo "You have finished install IMAGICK"
+echo "-------------------------------------------------------------------------"
+echo "Check install Imagick status at:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/check-imagick.php"
+echo "-------------------------------------------------------------------------"
+echo "If Imagick was install successfully, This page will show a picture"
+/etc/vpssim/menu/vpssim-tien-ich
+       ;;
+    *)
+    clear
+    echo "========================================================================="
+   echo "You cancel install IMAGICK"
+/etc/vpssim/menu/vpssim-tien-ich
+        ;;
+esac
+exit
+fi

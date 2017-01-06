@@ -1,0 +1,36 @@
+#!/bin/bash
+. /home/vpssim.conf
+if [ ! -f /etc/php.d/opcache.ini ]; then
+clear
+echo "========================================================================="
+echo "Zend Opcache current DISABLE"
+echo "-------------------------------------------------------------------------"
+echo "Please enable it to use this function"
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+fi
+if [  "$(grep home /etc/vpssim/opcache.blacklist)" == "" ]; then
+clear
+echo "========================================================================="
+echo "Current there are no website in Zend Opcache Blacklist"
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+exit
+fi
+cat /etc/vpssim/opcache.blacklist > /tmp/view-blacklist
+cat > "/tmp/viewzendcacheblacklist" <<END	
+sed -i 's/\/home\///g' /tmp/view-blacklist
+sed -i 's/\///g' /tmp/view-blacklist
+END
+chmod +x /tmp/viewzendcacheblacklist
+/tmp/viewzendcacheblacklist
+rm -rf /tmp/viewzendcacheblacklist
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..." 
+sleep 1
+clear
+echo "========================================================================="
+echo "List website on Zend Opcache BlackList: "
+echo "-------------------------------------------------------------------------"
+cat /tmp/view-blacklist | pr -3 -t
+rm -rf /tmp/view-blacklist
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+

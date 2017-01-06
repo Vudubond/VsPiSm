@@ -1,0 +1,74 @@
+#!/bin/bash
+
+. /home/vpssim.conf
+
+
+if [ -f /etc/csf/csf.conf ]; then
+clear
+echo "========================================================================="
+echo "Use this function to warn you when server not install CSF Fireall"
+echo "-------------------------------------------------------------------------"
+echo "VPS installed CSF Firewall "
+echo "-------------------------------------------------------------------------"
+echo "The warning auto Disabled"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+exit
+fi
+
+if [ ! -f /etc/vpssim/tatthongbao.csf ]; then
+echo "========================================================================="
+echo "YOU SHOULD SETUP CSF FIREWALL TO PROTECT VPS/SERVER !"
+echo "========================================================================="
+echo "When Server not install CSF, VPSSIM will show warning on VPSSIM Menu"
+echo "-------------------------------------------------------------------------"
+echo "Use this function to ON/OFF that warning."
+echo "========================================================================="
+echo "Warning [ Not Setup CSF Yet ] on  VPSSIM Menu is Enable !"
+echo "========================================================================="
+read -r -p "You want to Disable this warning ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "------------------------------------------------------------------------"
+    echo "Please wait....";sleep 1
+	touch /etc/vpssim/tatthongbao.csf
+clear
+echo "========================================================================="
+	echo "Disable warning [ Not Setup CSF Yet ] finished !"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+        ;;
+    *)
+        clear
+echo "========================================================================="
+#echo "Ban chon sai, vui long chon lai !"
+echo "You typed wrong, Please fill accurately"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+        ;;
+esac
+else
+echo "========================================================================="
+echo "YOU SHOULD SETUP CSF FIREWALL TO PROTECT VPS/SERVER !"
+echo "========================================================================="
+echo "When Server not install CSF, VPSSIM will show warning on VPSSIM Menu"
+echo "-------------------------------------------------------------------------"
+echo "Use this function to ON/OFF that wanring."
+echo "========================================================================="
+echo "Warning [ Not Setup CSF Yet ] on  VPSSIM Menu is Disabled !"
+echo "========================================================================="
+read -r -p "You want to Enable this warning ?  [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+	rm -rf /etc/vpssim/tatthongbao.csf
+clear
+echo "========================================================================="
+echo "Enable warning [ Not Setup CSF Yet ] finished !"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+        ;;
+    *)
+        clear
+echo "========================================================================="
+#echo "Ban chon sai, vui long chon lai !"
+echo "You typed wrong, Please fill accurately"
+/etc/vpssim/menu/CSF-Fiwall/vpssim-csf-firewall-menu
+        ;;
+esac
+fi

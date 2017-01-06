@@ -1,0 +1,83 @@
+#!/bin/sh
+. /home/vpssim.conf
+if [ ! -f /etc/cron.d/vpssim.db.cron ]; then
+touch /etc/cron.d/vpssim.db.cron
+fi
+if [ ! -d /home/$mainsite/private_html/backup ]; then
+mkdir -p /home/$mainsite/private_html/backup
+fi
+if [ -f /var/lib/mysql/vpssimCheckDB/db.opt ]; then
+rm -rf /var/lib/mysql/vpssimCheckDB
+fi
+find /home/$mainsite/private_html/backup/ -name "*.tar.gz*" > /tmp/vpssim_check_backup_database_size
+find /home/$mainsite/private_html/backup/ -name "*.sql.gz*" >> /tmp/vpssim_check_backup_database_size
+numberfiles=$(cat /tmp/vpssim_check_backup_database_size | wc -l)
+if [ ! "$numberfiles" = "0" ]; then
+backupdatabasesize=$(du -ch $(cat /tmp/vpssim_check_backup_database_size) | tail -1 | cut -f 1)
+else
+backupdatabasesize=0KB
+fi
+ls -l /var/lib/mysql | grep "^d" | awk -F" " '{print $9}' | grep -Ev "(Database|information_schema|mysql|performance_schema|vpssimCheckDB)" > /tmp/vpssim_check_db
+listdbnumber=`cat /tmp/vpssim_check_db`
+rm -rf /tmp/vpssim_listdbf
+for database in $listdbnumber
+do
+echo "/var/lib/mysql/$database" >> /tmp/vpssim_listdbf
+done
+if [ -f /tmp/vpssim_listdbf ]; then
+numberdb=$(cat /tmp/vpssim_listdbf | wc -l)
+	if [ ! "$numberdb" = "0" ]; then
+	databasesize=$(du -ch $(cat /tmp/vpssim_listdbf) | tail -1 | cut -f 1)
+	else
+	databasesize=0KB
+	fi
+else
+databasesize=0KB
+fi
+rm -rf /tmp/*vpssim*
+prompt="Type in your choice (14-Exit):"
+options=("Create Database" "Delete Database" "Backup 1 Database" "Backup All Databases" "Auto Backup Database" "Restore Database" "Auto re-Start MySQL Server" "View MySQL Root's password" "Change MySQL Root's Password" "Re-Config MySQL" "Get Link Download Backup" "Delete All Backup Files" "List Databases on Server" "Exit")
+printf "=========================================================================\n"
+printf "                VPSSIM - Manage VPS/Server by VPSSIM.COM              \n"
+printf "=========================================================================\n"
+printf "                           Database Manage                 \n"
+printf "=========================================================================\n"
+printf "     Total Databases Size: $databasesize | Total Backup Files Size: $backupdatabasesize \n"
+printf "=========================================================================\n"
+if [ "$(grep auth_basic_user_file /etc/nginx/conf.d/$mainsite.conf)" == "" ] ; then 
+echo "You have not ENABLED protect phpMyAdmin, backup files, ocp.php .. yet "
+echo "-------------------------------------------------------------------------"
+echo "Use [ ON/OFF Protect phpMyAdmin ] in [ phpMyAdmin Manage ] to ENABLED  "
+echo "-------------------------------------------------------------------------"
+echo "this feature."
+echo "-------------------------------------------------------------------------"
+echo "This notification auto disabled after you complete this security config!"
+echo "========================================================================="
+echo""
+fi
+PS3="$prompt"
+select opt in "${options[@]}" ; do 
+
+    case "$REPLY" in   
+    1) /etc/vpssim/menu/vpssim-tao-database;;
+    2) /etc/vpssim/menu/vpssim-xoa-database;; 
+    3 ) /etc/vpssim/menu/vpssim-sao-luu-data;;
+    4 ) /etc/vpssim/menu/vpssim-lan-luot-sao-luu-het-tat-ca-database;;
+    #4) clear && /etc/vpssim/menu/vpssim-sao-luu-phuc-hoi-tat-ca-database-menu;; "Full Backup & Restore Database" 
+    5) /etc/vpssim/menu/vpssim-tu-dong-sao-luu-database-menu;;
+    6 ) /etc/vpssim/menu/vpssim-phuc-hoi-database-chon-dinh-dang;;
+    7) /etc/vpssim/menu/tienich/befor-auto-start-mysql;;
+    8) /etc/vpssim/menu/vpssim-hien-mat-khau-root-mysql;;
+    9) /etc/vpssim/menu/vpssim-change-root-mysql-password;;
+    10) /etc/vpssim/menu/vpssim-re-config-database-cau-hinh-lai-mysql;;
+    11 ) /etc/vpssim/menu/vpssim-lay-link-sao-luu-database-backup-menu;;
+    12 ) /etc/vpssim/menu/vpssim-xoa-toan-bo-backup-database;;
+    13) /etc/vpssim/menu/vpssim-list-database-tren-vps-them-xoa-function;; 
+    14) clear && /bin/vpssim;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+
+    esac
+
+done
+
+ 

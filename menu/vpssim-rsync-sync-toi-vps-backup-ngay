@@ -1,0 +1,57 @@
+#!/bin/bash 
+. /home/vpssim.conf
+if [ ! -f /etc/vpssim/vps_backup_rsync.info ]; then
+clear
+echo "========================================================================="
+echo "This server has not configured connect to VPS Backup yet"
+echo "-------------------------------------------------------------------------"
+echo "You must using option #1 to config connect to VPS Backup first."
+/etc/vpssim/menu/vpssim-rsync-backup-vps-menu
+exit
+fi
+if [ ! -f /etc/vpssim/vpssim_backup_VPS_by_rsync ]; then
+clear
+echo "========================================================================="
+echo "You must [ Setting Time Sync ] before using this function"
+/etc/vpssim/menu/vpssim-rsync-backup-vps-menu
+exit
+fi
+echo "========================================================================="
+echo "Use this function to Sync Data to VPS backup immediately"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to Sync data now ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+ipvpsbackup=$(grep "ipaddress" /etc/vpssim/vps_backup_rsync.info | awk '{print $3}')
+echo "-------------------------------------------------------------------------"
+echo "Connecting to VPS Backup ... "
+checkconnect=$(ssh -o BatchMode=yes -o ConnectTimeout=9 root@$ipvpsbackup echo connected 2>&1)
+if [[ ! $checkconnect == connected ]] ; then
+clear
+echo "========================================================================="
+echo "Connection Failed !"
+echo "-------------------------------------------------------------------------"
+echo "You can not use this function"
+/etc/vpssim/menu/vpssim-rsync-backup-vps-menu
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+sleep 1
+/etc/vpssim/vpssim_backup_VPS_by_rsync
+
+clear
+echo "========================================================================="
+echo "Sync Data to VPS Backup finished !"
+/etc/vpssim/menu/vpssim-rsync-backup-vps-menu
+exit
+    ;;
+*)
+clear
+echo "========================================================================="
+echo "You cancel Sync Data to VPS backup immediately !"
+  /etc/vpssim/menu/vpssim-rsync-backup-vps-menu
+  exit
+;;
+esac
+exit

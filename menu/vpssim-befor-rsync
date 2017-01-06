@@ -1,0 +1,45 @@
+#!/bin/bash 
+. /home/vpssim.conf
+if [ ! -f ~/.ssh/id_rsa ]; then
+ssh-keygen -f ~/.ssh/id_rsa -q -P ""
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+fi
+if [ ! -f /usr/bin/sshpass ]; then
+yum -y -q install sshpass
+fi
+if [ ! -f ~/.ssh/config ]; then
+echo "StrictHostKeyChecking no" >> ~/.ssh/config
+else
+	if [ "`grep StrictHostKeyChecking ~/.ssh/config`" == "" ]; then
+	echo "StrictHostKeyChecking no" >> ~/.ssh/config
+	fi
+fi
+if [ ! -f /etc/vpssim/menu/vpssim-rsync-have-read ]; then
+clear
+printf "=========================================================================\n"
+printf "               VPSSIM - Manager VPS/Server by VPSSIM.COM \n"
+printf "=========================================================================\n"
+printf "                           VPS Backup Manage \n"
+printf "=========================================================================\n"
+printf "\n"
+echo "========================================================================="
+
+echo "Use this function to config backup current Server to other vps (VPS backup)"
+echo "-------------------------------------------------------------------------"
+echo "by Rsync. Save backup files in VPS backup is safer than save backup files "
+echo "-------------------------------------------------------------------------"
+echo "in the same server. When data backup to other vps, data in safe even "
+echo "-------------------------------------------------------------------------"
+echo "the using server corruption or loss of data."
+echo "-------------------------------------------------------------------------"
+echo "VPS Backup OS can be: Centos 6, Centos 7, Ubuntu, Debian."
+echo "-------------------------------------------------------------------------"
+echo "But recommend Centos 6 to get full support from VPSSIM ."
+echo "-------------------------------------------------------------------------"
+echo "Note: You can use 1 VPS Backup to backup many Servers"
+echo "-------------------------------------------------------------------------"
+touch /etc/vpssim/menu/vpssim-rsync-have-read
+read -p "Press [Enter] to continue ..."
+clear
+fi
+/etc/vpssim/menu/vpssim-rsync-backup-vps-menu

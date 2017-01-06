@@ -1,0 +1,104 @@
+#!/bin/bash
+. /home/vpssim.conf
+rm -rf /tmp/*hostingaz*
+mkdir -p /tmp/danhsachwebsitebackuphostingaz
+ls /etc/nginx/conf.d > /tmp/vpssim-websitelist
+sed -i 's/\.conf//g' /tmp/vpssim-websitelist
+ cat > "/tmp/vpssim-replace" <<END
+sed -i '/$mainsite/d' /tmp/vpssim-websitelist
+END
+chmod +x /tmp/vpssim-replace
+/tmp/vpssim-replace
+rm -rf /tmp/vpssim-replace
+rm -rf /tmp/checksite-list
+acction1="/tmp/vpssim-websitelist"
+while read -r checksite
+    do
+if [ -f /home/$mainsite/private_html/backup/$checksite/*.zip ]; then
+echo "$checksite" >> /tmp/checksite-list
+fi
+ done < "$acction1"
+if [ ! -f /tmp/checksite-list ]; then
+clear
+echo "========================================================================="
+echo "VPSSIM can not find any backup on server"
+/etc/vpssim/menu/vpssim-sao-luu
+fi
+sowebsitecobackup=$(cat /tmp/checksite-list | wc -l)
+code=-`date |md5sum |cut -c '1-15'`
+listwebsitebackup=$(cat /tmp/checksite-list)
+
+getlink ()
+{
+find /home/$mainsite/private_html/backup/$website/ -name '*.zip' -type f -exec basename {} \;  > /tmp/linkbackup
+filename=`cat /tmp/linkbackup`
+echo "========================================================================="
+echo "Link Download Backup for $website: "
+echo "-------------------------------------------------------------------------"
+sleep 2
+echo "http://$serverip:$priport/backup/$website/$filename"
+echo "" >> /home/$mainsite/private_html/listbackup-AW$code.txt
+echo "========================================================================================================================" >> /home/$mainsite/private_html/listbackup-AW$code.txt
+echo "Link Download Backup for $website: " >> /home/$mainsite/private_html/listbackup-AW$code.txt
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/listbackup-AW$code.txt
+echo "Most Recent Backup (Created On $(date -r /home/$mainsite/private_html/backup/$website/$filename +%H:%M/%F)):" >> /home/$mainsite/private_html/listbackup-AW$code.txt
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html//listbackup-AW$code.txt
+echo "http://$serverip:$priport/backup/$website/$filename" >> /home/$mainsite/private_html/listbackup-AW$code.txt
+#####################
+find /home/$mainsite/private_html/backup/$website/ -type f -exec basename {} \;  > /tmp/linkbackupall
+backupall=$(cat /tmp/linkbackupall)
+if [ "$(cat /tmp/linkbackupall | wc -l)" -gt 1 ]; then
+echo "------------------------------------------------------------------------------------------------------------------------"  >> /home/$mainsite/private_html/listbackup-AW$code.txt
+echo "All Backup Files:" >> /home/$mainsite/private_html/listbackup-AW$code.txt
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/listbackup-AW$code.txt
+for backupfile in $backupall
+do
+echo "http://$serverip:$priport/backup/$website/$backupfile" >> /home/$mainsite/private_html/listbackup-AW$code.txt
+done
+fi
+#########################
+rm -rf /tmp/linkbackupall
+rm -rf /tmp/linkbackup
+touch /tmp/danhsachwebsitebackuphostingaz/$website
+}
+
+echo "========================================================================="
+echo "Use this function to get link download all backup of website on server"
+echo "=========================================================================" 
+read -r -p "You want to get this list ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "========================================================================="
+rm -rf /home/$mainsite/private_html/listbackup*
+echo "========================================================================================================================" > /home/$mainsite/private_html/listbackup-AW$code.txt
+echo "         Link Download All Backup Files - Created by VPSSIM" >> /home/$mainsite/private_html/listbackup-AW$code.txt
+echo "========================================================================================================================" >> /home/$mainsite/private_html/listbackup-AW$code.txt
+echo "" >> /home/$mainsite/private_html/listbackup-AW$code.txt
+
+for website in $listwebsitebackup 
+do
+getlink
+done
+clear
+echo "========================================================================="
+echo "List Website Has Backup File:"
+echo "-------------------------------------------------------------------------"
+ls /tmp/danhsachwebsitebackuphostingaz | pr -2 -t
+echo "-------------------------------------------------------------------------"
+echo "Link download All Backup Files:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/listbackup-AW$code.txt"
+echo "" >> /home/$mainsite/private_html/listbackup-AW$code.txt
+echo "===================================================The End==============================================================" >> /home/$mainsite/private_html/listbackup-AW$code.txt
+rm -rf /tmp/*hostingaz*
+/etc/vpssim/menu/vpssim-sao-luu
+   ;;
+    *)
+    clear
+        echo "========================================================================= "
+        echo "Cancel get backup links"
+        /etc/vpssim/menu/vpssim-sao-luu
+        rm -rf /tmp/*hostingaz*
+        ;;
+esac
+

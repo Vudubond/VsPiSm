@@ -1,0 +1,57 @@
+#!/bin/bash
+
+. /home/vpssim.conf
+if [ ! -d /home/$mainsite/private_html ]; then
+clear
+echo "========================================================================="
+echo "You can not use this function"
+/etc/vpssim/menu/vpssim-sao-luu
+exit
+fi
+
+echo "========================================================================="
+echo "Use this function to delete all backup file of websites in server"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to delete all backup files ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+cd /home/$mainsite/private_html/backup/
+find . -name "*.zip" > /tmp/deletebackupdb
+find . -name "*.zip.*" >> /tmp/deletebackupdb
+checksize=$(du -sb /tmp/deletebackupdb | awk 'NR==1 {print $1}')
+	if [ "$checksize" = "0" ]; then
+	echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+sleep 1
+	clear
+	echo "========================================================================= "
+	echo "There is no backup of websites in server"
+	/etc/vpssim/menu/vpssim-sao-luu
+	exit
+	fi
+listfolder=$(cat /tmp/deletebackupdb)
+for pathfolder in $listfolder
+do
+export vpssim=$pathfolder
+export sim=${vpssim%/*}
+rm -rf "${sim}"
+done
+cd
+rm -rf /tmp/deletebackupdb
+rm -rf /home/$mainsite/private_html/listbackup*
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+sleep 1
+clear
+echo "========================================================================= "
+echo "Delete all backup of websites successfully  "
+/etc/vpssim/menu/vpssim-sao-luu
+;;
+    *)
+        echo ""
+        ;;
+esac
+clear
+echo "========================================================================="
+echo "Cancel all backup of websites"
+/etc/vpssim/menu/vpssim-sao-luu

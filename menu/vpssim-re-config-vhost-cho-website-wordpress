@@ -1,0 +1,238 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+echo "========================================================================="
+echo "Use this function to config Vhost for cache plugin or Re-Config Vhost "
+echo "-------------------------------------------------------------------------"
+echo "for website working with new cache plugin when you change to other cache  "  
+echo "-------------------------------------------------------------------------"
+echo "plugin( Example: Change from W3 Total Cache to Wp Super Cache) "
+echo "========================================================================="
+echo -n "Type in website: " 
+read website
+
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please type in accurately! "
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a domain name !"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "Can not discover $website"
+echo "-------------------------------------------------------------------------"
+echo "PLease try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ -f /home/$website/public_html/wp-config-sample.php ]; then
+if [ ! -f /home/$website/public_html/wp-config.php ]; then
+clear
+echo "========================================================================="
+echo "$website use wordpress code but not install yet!"
+echo "-------------------------------------------------------------------------"
+echo "Please install wordpress code then try again  !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+fi
+if [ ! -f /home/$website/public_html/wp-config.php ]; then
+clear
+echo "========================================================================="
+echo "$website is not wordpress blog !"
+echo "-------------------------------------------------------------------------"
+echo "PLease try again !."
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ "$(grep "include /etc/nginx/conf/w3total.conf;" /etc/nginx/conf.d/$website.conf)" == "" ]; then
+clear
+echo "========================================================================="
+echo "You have deleted 1 of 3 lines: AAA, CCC, DDD in Vhost of $website"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM can not finish your request"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+  exit
+  fi
+   if [ "$(grep "include /etc/nginx/conf/supercache.conf;" /etc/nginx/conf.d/$website.conf)" == "" ]; then
+clear
+echo "========================================================================="
+echo "You have deleted 1 of 3 lines: AAA, CCC, DDD in Vhost of $website"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM can not finish your request"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+  exit
+  fi
+    if [ "$(grep "include /etc/nginx/conf/all.conf;" /etc/nginx/conf.d/$website.conf)" == "" ]; then
+clear
+echo "========================================================================="
+echo "You have deleted 1 of 3 lines: AAA, CCC, DDD in Vhost of $website"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM can not finish your request"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+  exit
+  fi
+echo "-------------------------------------------------------------------------"
+echo "Discovered $website using Wordpress code in system"
+printf "=========================================================================\n"
+#prompt="Nhap lua chon cua ban: "
+prompt="Type in your choice: "
+options=( "Config Vhost for Redis Cache" "Config Vhost for WP Super Cache" "Config Vhost for W3 Total Cache" "Cancel")
+printf "CHOOSE HOW TO CONGIG VHOST\n"
+printf "=========================================================================\n"
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+
+    case "$REPLY" in
+    1) reconfigvhost="rediscache"; break;;
+    2) reconfigvhost="supercache"; break;;
+    3) reconfigvhost="w3total"; break;;
+    4) reconfigvhost="cancel"; break;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    #*) echo "Ban nhap sai, vui long nhap theo so thu tu tren menu";continue;;
+    esac  
+done
+###################################
+#rediscache
+###################################
+if [ "$reconfigvhost" = "rediscache" ]; then
+echo "-------------------------------------------------------------------------"
+echo "Please wait ...."
+echo "-------------------------------------------------------------------------"
+  if [ "$(grep "include /etc/nginx/conf/all.conf;" /etc/nginx/conf.d/$website.conf)" == "include /etc/nginx/conf/all.conf;" ]; then
+clear
+echo "========================================================================="
+echo "Current $website using Vhost config for Redis Cache"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+  exit
+  fi
+  if [ "$(grep "include /etc/nginx/conf/all.conf;" /etc/nginx/conf.d/$website.conf)" == "" ]; then
+clear
+echo "========================================================================="
+echo "You have change file vhost config of VPSSIM"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM can not finish your request"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+  exit
+  fi
+cat > "/tmp/re-config-vhost.sh" <<END
+#!/bin/sh
+sed -i 's/.*all.conf.*/include \/etc\/nginx\/conf\/all.conf;/g' /etc/nginx/conf.d/$website.conf
+sed -i 's/.*supercache.conf.*/#include \/etc\/nginx\/conf\/supercache.conf;/g' /etc/nginx/conf.d/$website.conf
+sed -i 's/.*w3total.conf.*/#include \/etc\/nginx\/conf\/w3total.conf;/g' /etc/nginx/conf.d/$website.conf
+END
+chmod +x /tmp/re-config-vhost.sh
+/tmp/re-config-vhost.sh
+rm -f /tmp/re-config-vhost.sh
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+else 
+systemctl restart nginx.service
+fi
+clear
+echo "========================================================================="
+echo "Config Vhost for Redis Cache successfully"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+###################################
+#supercache
+###################################
+elif [ "$reconfigvhost" = "supercache" ]; then
+echo "-------------------------------------------------------------------------"
+echo "Please wait ...."
+echo "-------------------------------------------------------------------------"
+  if [ "$(grep "include /etc/nginx/conf/supercache.conf;" /etc/nginx/conf.d/$website.conf)" == "include /etc/nginx/conf/supercache.conf;" ]; then
+clear
+echo "========================================================================="
+echo "Current $website using Vhost config for WP Super Cache"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+  exit
+  fi
+  if [ "$(grep "include /etc/nginx/conf/supercache.conf;" /etc/nginx/conf.d/$website.conf)" == "" ]; then
+clear
+echo "========================================================================="
+echo "You have change file vhost config of VPSSIM"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM can not finish your request"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+  exit
+  fi
+cat > "/tmp/re-config-vhost.sh" <<END
+#!/bin/sh
+sed -i 's/.*all.conf.*/#include \/etc\/nginx\/conf\/all.conf;/g' /etc/nginx/conf.d/$website.conf
+sed -i 's/.*supercache.conf.*/include \/etc\/nginx\/conf\/supercache.conf;/g' /etc/nginx/conf.d/$website.conf
+sed -i 's/.*w3total.conf.*/#include \/etc\/nginx\/conf\/w3total.conf;/g' /etc/nginx/conf.d/$website.conf
+END
+chmod +x /tmp/re-config-vhost.sh
+/tmp/re-config-vhost.sh
+rm -f /tmp/re-config-vhost.sh
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+else 
+systemctl restart nginx.service
+fi
+clear
+echo "========================================================================="
+echo "Config Vhost for WP Super Cache successfully"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+
+####################
+#w3total
+##################
+elif [ "$reconfigvhost" = "w3total" ]; then
+
+echo "-------------------------------------------------------------------------"
+echo "Please wait ...."
+echo "-------------------------------------------------------------------------"
+  if [ "$(grep "include /etc/nginx/conf/w3total.conf;" /etc/nginx/conf.d/$website.conf)" == "include /etc/nginx/conf/w3total.conf;" ]; then
+clear
+echo "========================================================================="
+echo "Current $website using Vhost config for W3 Total Cache"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+  exit
+  fi
+    if [ "$(grep "include /etc/nginx/conf/w3total.conf;" /etc/nginx/conf.d/$website.conf)" == "" ]; then
+clear
+echo "========================================================================="
+echo "You have change file vhost config of VPSSIM"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM can not finish your request"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+  exit
+  fi
+cat > "/tmp/re-config-vhost.sh" <<END
+#!/bin/sh
+sed -i 's/.*all.conf.*/#include \/etc\/nginx\/conf\/all.conf;/g' /etc/nginx/conf.d/$website.conf
+sed -i 's/.*supercache.conf.*/#include \/etc\/nginx\/conf\/supercache.conf;/g' /etc/nginx/conf.d/$website.conf
+sed -i 's/.*w3total.conf.*/include \/etc\/nginx\/conf\/w3total.conf;/g' /etc/nginx/conf.d/$website.conf
+END
+chmod +x /tmp/re-config-vhost.sh
+/tmp/re-config-vhost.sh
+rm -f /tmp/re-config-vhost.sh
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+else 
+systemctl restart nginx.service
+fi
+clear
+echo "========================================================================="
+echo "Config Vhost for W3 Total Cache successfully"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+###################################
+#Huy bo 
+###################################
+else 
+clear && /etc/vpssim/menu/vpssim-wordpress-tools-menu
+fi

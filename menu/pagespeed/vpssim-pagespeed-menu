@@ -1,0 +1,24 @@
+#!/bin/sh
+prompt="Type in your choice (5-Exit):"
+options=("Enable Nginx Pagespeed" "Disable Nginx Pagespeed" "Clear Nginx Pagespeed Cache" "List Website Enabled Pagespeed" )
+
+printf "=========================================================================\n"
+printf "               VPSSIM - Manage VPS/Server by VPSSIM.COM                \n"
+printf "=========================================================================\n"
+printf "                       Nginx Pagespeed Manage                                \n"
+printf "=========================================================================\n"
+
+PS3="$prompt"
+select opt in "${options[@]}" "Exit"; do 
+
+    case "$REPLY" in
+    1 ) /etc/vpssim/menu/pagespeed/vpssim-bat-pagespeed;;
+    2 ) /etc/vpssim/menu/pagespeed/vpssim-tat-pagespeed;;
+    3 ) /etc/vpssim/menu/pagespeed/vpssim-clear-pagespeed;;
+    4 ) /etc/vpssim/menu/pagespeed/vpssim-list-website-dang-bat-pagespeed;;
+    
+    $(( ${#options[@]}+1 )) ) echo "bye!";  clear && /bin/vpssim;;
+    *) echo "You typed in wrong, Please type in the ordinal number on the list";continue;;
+
+    esac
+done

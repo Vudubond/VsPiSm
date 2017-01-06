@@ -1,0 +1,22 @@
+#!/bin/sh
+. /home/vpssim.conf
+if [ ! -f /etc/vpssim/btsync.info ]; then
+clear
+echo "========================================================================= "
+echo "Your server has not installed BTSync yet !"
+/etc/vpssim/menu/vpssim-bitsync-menu
+else
+echo "-------------------------------------------------------------------------"
+echo "Please wait..."; sleep 1
+clear
+echo "========================================================================="
+echo "Manage infomation for BTsync:"
+echo "-------------------------------------------------------------------------"
+echo "Btsync Link: http://$serverip:$(grep btport /etc/vpssim/btsync.info | awk 'NR==1 {print $3}')"
+echo "-------------------------------------------------------------------------"
+echo "User: $(grep username /etc/vpssim/btsync.info | awk 'NR==1 {print $3}') | Password: $(grep password /etc/vpssim/btsync.info | awk 'NR==1 {print $3}')"
+echo "-------------------------------------------------------------------------"
+echo "You must ENABLE BTsync before using "
+/etc/vpssim/menu/vpssim-bitsync-menu
+exit
+fi

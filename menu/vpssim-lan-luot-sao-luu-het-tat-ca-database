@@ -1,0 +1,194 @@
+#!/bin/bash
+. /home/vpssim.conf
+rm -rf /tmp/*hostingaz*
+code=`date |md5sum |cut -c '1-19'`
+echo "$(mysql --user=root --password=$mariadbpass -e "SHOW DATABASES;" | grep -Ev "(Database|information_schema|mysql|performance_schema)")" > /tmp/listdabasehostingaz
+checksize=$(du -sb /tmp/listdabasehostingaz | awk 'NR==1 {print $1}')
+   if [ "$checksize" == "0" ]; then
+   clear
+   echo "========================================================================="
+   echo "Can not find out any database on server"
+   /etc/vpssim/menu/vpssim-them-xoa-database
+   exit
+   fi
+sodatabasetrenserver=$(cat /tmp/listdabasehostingaz | wc -l)
+listdatabasetrenserver=$(cat /tmp/listdabasehostingaz)
+mkdir -p /tmp/saoluudatabasethanhconghostingaz
+mkdir -p /tmp/saoluudatabasethatbaihostingaz
+rm -rf /tmp/checkdatabase-list
+for database in $listdatabasetrenserver 
+do
+if [ ! "$(ls -1 /var/lib/mysql/$database | wc -l)" == "1" ]; then
+echo "$database" >> /tmp/checkdatabase-list
+fi
+ done
+ if [ ! -f /tmp/checkdatabase-list ]; then
+clear
+echo "========================================================================="
+echo "There's no database has data on system"
+echo "--------------------------------------------------------------------------"
+echo "You do not need using this function !"
+/etc/vpssim/menu/vpssim-them-xoa-database
+exit
+fi
+sodatabase=$(cat /tmp/checkdatabase-list | wc -l)
+saoluudata ()
+{
+randomcode=-`date |md5sum |cut -c '1-11'`
+if [ -f /bin/vpssim-backupdb-$dataname ]; then
+if [ ! "$(grep vpssim-backupdb-$dataname /etc/cron.d/vpssim.db.cron)" == "" ]; then
+filename=$(grep "$dataname" /bin/vpssim-backupdb-$dataname | awk 'NR==7 {print $11}')
+####
+if [ ! -d /home/$mainsite/private_html/backup/$dataname ]; then
+mkdir -p /home/$mainsite/private_html/backup/$dataname
+fi
+cd /home/$mainsite/private_html/backup/$dataname
+if [ -f /home/$mainsite/private_html/backup/$dataname/*.sql.gz ]; then
+for file in *.sql.gz; do
+time=$(date -r /home/$mainsite/private_html/backup/$dataname/$file +%H%M-%d%m%y)
+    mv "$file" "`basename $file .sql.gz`.sql.gz.$time"
+    echo "$file.$time" > /tmp/vpssim_ten_file_cu_data
+done
+fi
+if [ "$(grep "default_storage_engine = MyISAM" /etc/my.cnf.d/server.cnf | awk 'NR==1 {print $3}')" = "MyISAM" ]; then
+mysqldump -u root -p$mariadbpass $dataname --lock-tables=false | gzip -6 > $filename
+else
+mysqldump -u root -p$mariadbpass $dataname --single-transaction | gzip -6 > $filename
+fi
+cd
+if [ -f /home/$mainsite/private_html/backup/$dataname/$filename ]; then
+echo "========================================================================="
+echo "Backup Database $dataname (Enabled Auto Backup) :"
+sleep 1
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/backup/$dataname/$filename"
+if [ -f /tmp/vpssim_ten_file_cu_data ]; then
+echo "-------------------------------------------------------------------------"
+echo "Old Backup file was renamed to:"
+echo "-------------------------------------------------------------------------"
+echo "`cat /tmp/vpssim_ten_file_cu_data`"
+rm -rf /tmp/vpssim_ten_file_cu_data
+fi
+sleep 3
+echo "========================================================================================================================" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "Database $dataname (Enabled Auto Backup):" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt 
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "http://$serverip:$priport/backup/$dataname/$filename" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+touch /tmp/saoluudatabasethanhconghostingaz/$dataname
+else
+echo "=========================================================================" 
+echo "Backup Database $dataname failed !"
+echo "========================================================================================================================" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "Backup Database $dataname failed !" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+touch /tmp/saoluudatabasethatbaihostingaz/$dataname
+fi
+fi
+fi
+if [ ! -f /bin/vpssim-backupdb-$dataname ]; then
+####
+if [ ! -d /home/$mainsite/private_html/backup/$dataname ]; then
+mkdir -p /home/$mainsite/private_html/backup/$dataname
+fi
+cd /home/$mainsite/private_html/backup/$dataname
+if [ -f /home/$mainsite/private_html/backup/$dataname/*.sql.gz ]; then
+for file in *.sql.gz; do
+time=$(date -r /home/$mainsite/private_html/backup/$dataname/$file +%H%M-%d%m%y)
+    mv "$file" "`basename $file .sql.gz`.sql.gz.$time"
+    echo "$file.$time" > /tmp/vpssim_ten_file_cu_data
+done
+fi
+if [ "$(grep "default_storage_engine = MyISAM" /etc/my.cnf.d/server.cnf | awk 'NR==1 {print $3}')" = "MyISAM" ]; then
+mysqldump -u root -p$mariadbpass $dataname --lock-tables=false | gzip -6 > $dataname$randomcode.sql.gz
+else
+mysqldump -u root -p$mariadbpass $dataname --single-transaction | gzip -6 > $dataname$randomcode.sql.gz
+fi
+cd
+if [ -f /home/$mainsite/private_html/backup/$dataname/$dataname$randomcode.sql.gz ]; then
+echo "========================================================================="
+echo "Backup Database $dataname :"
+sleep 3
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/backup/$dataname/$dataname$randomcode.sql.gz"
+if [ -f /tmp/vpssim_ten_file_cu_data ]; then
+echo "-------------------------------------------------------------------------"
+echo "Old Backup file was renamed to:"
+echo "-------------------------------------------------------------------------"
+echo "`cat /tmp/vpssim_ten_file_cu_data`"
+rm -rf /tmp/vpssim_ten_file_cu_data
+fi
+sleep 3
+echo "========================================================================================================================" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "Database $dataname :" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt 
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "http://$serverip:$priport/backup/$dataname/$dataname$randomcode.sql.gz" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+touch /tmp/saoluudatabasethanhconghostingaz/$dataname
+else
+echo "=========================================================================" 
+echo "Backup Database $dataname failed !"
+echo "========================================================================================================================" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "Backup Database $dataname failed !" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+touch /tmp/saoluudatabasethatbaihostingaz/$dataname
+fi
+fi
+
+}
+
+echo "========================================================================="
+echo "Use this function to backup all database on server. VPSSIM will backup all"
+echo "-------------------------------------------------------------------------"
+echo "databases then show link download backup file. Depending on number of "
+echo "-------------------------------------------------------------------------"
+echo "databases and database size, that backup time can be fast or slow  "
+echo "=========================================================================" 
+read -r -p "You want VPSSIM backup all databases ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "========================================================================="
+echo "Total Database on server: $sodatabasetrenserver | Database has data: $sodatabase"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM will backup $sodatabase database has data on server"
+echo "========================================================================="
+echo "PLEASE DO NOT TURNOFF THIS SCREEN  !"
+sleep 2
+rm -rf /home/$mainsite/private_html/Listbackupall*
+echo "========================================================================================================================" > /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "                                  Link Download Backup All Database - Created by VPSSIM" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "========================================================================================================================" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+echo "" >> /home/$mainsite/private_html/Listbackupall-DB-$code.txt
+listdatabases=$(cat /tmp/checkdatabase-list)
+for dataname in $listdatabases 
+do
+saoluudata
+done
+clear
+echo "========================================================================="
+echo "There are $sodatabase Database has data on server"
+echo "-------------------------------------------------------------------------"
+if [ "$(ls -1 /tmp/saoluudatabasethanhconghostingaz | wc -l)" == "$sodatabase" ]; then
+echo "Backup all database successfully"
+else
+echo "Backup failed $(ls -1 /tmp/saoluudatabasethatbaihostingaz | wc -l) database"
+echo "-------------------------------------------------------------------------"
+echo "Backup failed:"
+echo "-------------------------------------------------------------------------"
+ls /tmp/saoluudatabasethatbaihostingaz
+fi
+if [ ! "$(ls -1 /tmp/saoluudatabasethatbaihostingaz | wc -l)" == "$sodatabase" ]; then
+echo "-------------------------------------------------------------------------"
+echo "List Backup Files:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/Listbackupall-DB-$code.txt"
+fi
+rm -rf /tmp/*hostingaz*
+/etc/vpssim/menu/vpssim-them-xoa-database
+   ;;
+    *)
+    clear
+    rm -rf /tmp/*hostingaz*
+        echo "========================================================================= "
+        echo "Cancel backup all databases"
+        /etc/vpssim/menu/vpssim-them-xoa-database
+        ;;
+esac
+

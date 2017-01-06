@@ -1,0 +1,40 @@
+#!/bin/bash
+
+. /home/vpssim.conf
+
+
+saoluuiptables ()
+{
+iptables-save > /etc/vpssim/iptables.bak
+echo "--------------------------------------------------------------------------"
+echo "Please wait..."
+sleep 1
+clear
+echo "========================================================================="
+echo "Backup for IPtables Firewall Rules finished!"
+/etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+}
+if [ -f /etc/vpssim/iptables.bak ]; then
+echo "--------------------------------------------------------------------------"
+echo "Discover the old IPtables Firewall backup"
+echo "--------------------------------------------------------------------------"
+read -r -p "Delete it and create new backup file ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+	saoluuiptables
+        ;;
+    *)
+    clear
+    echo "========================================================================="
+        echo "Cancel creat new IPtables Firewall backup"
+        /etc/vpssim/menu/vpssim-iptables-firewall-manager-menu
+        ;;
+esac
+else
+echo "========================================================================="
+echo "Use this function to backup IPtables Firewall Rules for server"
+echo "--------------------------------------------------------------------------"
+echo "Prepare to backup IPtables Rules"
+sleep 3
+saoluuiptables
+fi

@@ -1,0 +1,70 @@
+#!/bin/bash 
+. /home/vpssim.conf
+
+if [ ! -f /etc/php.d/opcache.ini ]; then
+clear
+echo "========================================================================="
+echo "Zend Opcache current DISABLE"
+echo "-------------------------------------------------------------------------"
+echo "Please enable it to use this function"
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+exit
+fi
+if [ -f /etc/php.d/opcache.ini ]; then
+echo "-------------------------------------------------------------------------"
+echo "Please wait....";sleep 1
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service php-fpm restart
+fi
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "7" ]; then 
+systemctl restart php-fpm.service
+fi
+
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+test_php=$(/sbin/service php-fpm status | awk 'NR==1 {print $3}')
+if [ "$test_php" == "stopped" ]; then
+clear
+echo "========================================================================="
+echo "Zend Opcache can not clear because PHP-FPM can not restart. "
+echo "-------------------------------------------------------------------------"
+echo "Maybe you did a wrong config !!"
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+exit
+fi
+fi
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "7" ]; then 
+test_php=$(/bin/systemctl status  php-fpm.service | awk 'NR==3 {print $2}')
+if [ "$test_php" == "inactive" ]; then
+clear
+echo "========================================================================="
+echo "Zend Opcache can not clear because PHP-FPM stopped. "
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+exit
+fi
+fi
+
+
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "7" ]; then 
+test_php=$(/bin/systemctl status  php-fpm.service | awk 'NR==3 {print $2}')
+if [ "$test_php" == "failed" ]; then
+clear
+echo "========================================================================="
+echo "Zend OPcache can not clear because PHP-FPM can not restart. "
+echo "-------------------------------------------------------------------------"
+echo "Maybe you did a wrong config !!"
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+exit
+fi
+fi
+clear
+echo "========================================================================= "
+echo "You have finished clearing Opcache "
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+fi
+clear
+echo "========================================================================= "
+echo "Zend OPcache is disabled on your VPS"
+echo "--------------------------------------------------------------------------"
+echo "Lets enable Opcache to get the best VPS productivity"
+/etc/vpssim/menu/opcache/vpssim-before-opcache
+fi

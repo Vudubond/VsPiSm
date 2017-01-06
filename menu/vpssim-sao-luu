@@ -1,0 +1,65 @@
+#!/bin/sh
+. /home/vpssim.conf
+if [ ! -f /usr/local/bin/htpasswd.py ]; then
+cp -r /etc/vpssim/menu/vpssim-tao-mat-khau-bao-ve-folder.py /usr/local/bin/htpasswd.py
+chmod 755 /usr/local/bin/htpasswd.py
+fi
+if [ ! -f /etc/vpssim/pwprotect.default ]; then
+echo "" > /etc/vpssim/pwprotect.default
+fi
+if [ ! -f /etc/cron.d/vpssim.code.cron ]; then
+touch /etc/cron.d/vpssim.code.cron
+fi
+if [ ! -d /home/$mainsite/private_html/backup ]; then
+mkdir -p /home/$mainsite/private_html/backup
+fi
+find /home/$mainsite/private_html/backup/ -name "*.zip*" > /tmp/vpssim_check_backup_code_size
+
+numberfiles=$(cat /tmp/vpssim_check_backup_code_size | wc -l)
+if [ ! "$numberfiles" = "0" ]; then
+backupcodesize=$(du -ch $(cat /tmp/vpssim_check_backup_code_size) | tail -1 | cut -f 1)
+else
+backupcodesize=0KB
+fi
+rm -rf /tmp/*vpssim*
+prompt="Type in your choice (7-Exit):"
+options=("Backup 1 Website" "Backup All Websites" "Auto Backup Website" "Restore Website" "Get Link Backup File" "Deleted All Backup Files" "Exit")
+printf "=========================================================================\n"
+printf "                VPSSIM - Manage VPS/Server by VPSSIM.COM \n"
+printf "=========================================================================\n"
+printf "                         Backup & Restore Code\n"
+printf "=========================================================================\n"
+printf "                     Total Backup Files Size: $backupcodesize \n"
+printf "=========================================================================\n"
+if [ "$(grep auth_basic_user_file /etc/nginx/conf.d/$mainsite.conf)" == "" ] ; then 
+echo "You have not ENABLED protect phpMyAdmin, backup files, ocp.php .. yet "
+echo "-------------------------------------------------------------------------"
+echo "Use [ ON/OFF Protect phpMyAdmin ] in [ phpMyAdmin Manage ] to ENABLED  "
+echo "-------------------------------------------------------------------------"
+echo "this feature."
+echo "-------------------------------------------------------------------------"
+echo "This notification auto disabled after you complete this security config!"
+echo "========================================================================="
+echo""
+fi
+PS3="$prompt"
+select opt in "${options[@]}" ; do 
+
+    case "$REPLY" in
+
+    1 ) /etc/vpssim/menu/vpssim-sao-luu-code;;
+    2 ) /etc/vpssim/menu/vpssim-lan-luot-sao-luu-het-tat-ca-website;;
+    #3 ) /etc/vpssim/menu/vpssim-sao-luu-home;;
+    3 ) /etc/vpssim/menu/vpssim-tu-dong-sao-luu-code-menu;;
+    4 ) /etc/vpssim/menu/vpssim-phuc-hoi-website;;
+    5 ) /etc/vpssim/menu/vpssim-lay-link-sao-luu-website-backup-menu;;
+    #6 ) /etc/vpssim/menu/vpssim-link-tai-sao-luu-tat-ca-cac-site;;
+    6 ) /etc/vpssim/menu/vpssim-xoa-toan-bo-backup-website;;
+    7 ) clear && vpssim;;
+    
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+
+    esac
+
+done
+

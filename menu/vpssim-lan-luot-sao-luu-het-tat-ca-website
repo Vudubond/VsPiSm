@@ -1,0 +1,154 @@
+#!/bin/bash
+. /home/vpssim.conf
+if [ ! -f /etc/cron.d/vpssim.code.cron ]; then
+touch /etc/cron.d/vpssim.code.cron
+fi
+rm -rf /tmp/*hostingaz*
+mkdir -p /tmp/saoluuwebsitethanhconghostingaz
+mkdir -p /tmp/saoluuwebsitethatbaihostingaz
+ls /etc/nginx/conf.d > /tmp/vpssim-websitelist
+sed -i 's/\.conf//g' /tmp/vpssim-websitelist 
+ cat > "/tmp/vpssim-replace" <<END
+sed -i '/$mainsite/d' /tmp/vpssim-websitelist
+END
+chmod +x /tmp/vpssim-replace
+/tmp/vpssim-replace
+rm -rf /tmp/vpssim-replace
+rm -rf /tmp/checksite-list
+sowebsitetrenserver=$(cat /tmp/vpssim-websitelist | wc -l)
+acction1="/tmp/vpssim-websitelist"
+while read -r checksite
+    do
+if [ -f /home/$checksite/public_html/index.php ]; then
+echo "$checksite" >> /tmp/checksite-list
+fi
+ done < "$acction1"
+
+if [ ! -f /tmp/checksite-list ]; then
+clear
+echo "========================================================================="
+echo "There's no website has data on system"
+echo "--------------------------------------------------------------------------"
+echo "You do not need using this function !"
+/etc/vpssim/menu/vpssim-sao-luu
+fi
+sowebsitecodulieu=$(cat /tmp/checksite-list | wc -l)
+randomcode=-`date |md5sum |cut -c '1-15'`
+ls /bin/ > /tmp/checkautobackuphostingaz.txt
+saoluucode ()
+{
+if [ ! "$(grep vpssim-backupcode-$website /tmp/checkautobackuphostingaz.txt)" == "" ]; then
+	if [ ! "$(grep vpssim-backupcode-$website /etc/cron.d/vpssim.code.cron)" == "" ]; then
+pathname=$(grep "\/home\/$mainsite\/private_html\/backup\/$website" /bin/vpssim-backupcode-$website | awk 'NR==6 {print $3}')
+filename=$(basename $pathname)
+thongbao=$(echo " (Enabled Auto Backup Code)")
+	else
+filename=$website$randomcode.zip
+thongbao=$(echo "")
+	fi
+else
+filename=$website$randomcode.zip
+thongbao=$(echo "")
+fi
+if [ ! -d /home/$mainsite/private_html/backup/$website ]; then
+mkdir -p /home/$mainsite/private_html/backup/$website
+fi
+cd /home/$mainsite/private_html/backup/$website
+if [ -f /home/$mainsite/private_html/backup/$website/*.zip ]; then
+for file in *.zip; do
+time=$(date -r /home/$mainsite/private_html/backup/$website/$file +%H%M-%d%m%y)
+    mv "$file" "`basename $file .zip`.zip.$time"
+    echo "$file.$time" > /tmp/vpssim_ten_file_cu
+done
+fi
+cd
+cd /home/$website/public_html/
+zip -r -q $website.zip *
+mv $website.zip /home/$mainsite/private_html/backup/$website/$filename
+cd
+if [ -f /home/$mainsite/private_html/backup/$website/$filename ]; then
+echo "========================================================================="
+echo "Backup $website$thongbao:"
+sleep 1
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/backup/$website/$filename"
+if [ -f /tmp/vpssim_ten_file_cu ]; then
+echo "-------------------------------------------------------------------------"
+echo "Old Backup file was renamed to:"
+echo "-------------------------------------------------------------------------"
+echo "`cat /tmp/vpssim_ten_file_cu`"
+rm -rf /tmp/vpssim_ten_file_cu
+fi
+sleep 3
+echo "========================================================================================================================" >> /home/$mainsite/private_html/listbackup-AW$randomcode.txt
+echo "Website $website$thongbao:" >> /home/$mainsite/private_html/listbackup-AW$randomcode.txt 
+echo "------------------------------------------------------------------------------------------------------------------------" >> /home/$mainsite/private_html/listbackup-AW$randomcode.txt
+echo "http://$serverip:$priport/backup/$website/$filename" >> /home/$mainsite/private_html/listbackup-AW$randomcode.txt
+touch /tmp/saoluuwebsitethanhconghostingaz/$website
+else
+echo "=========================================================================" 
+echo "Backup website $website failed !"
+echo "========================================================================================================================" >> /home/$mainsite/private_html/listbackup-AW$randomcode.txt
+echo "Backup website $website failed !" >> /home/$mainsite/private_html/listbackup-AW$randomcode.txt
+touch /tmp/saoluuwebsitethatbaihostingaz/$website
+fi
+}
+echo "========================================================================="
+echo "VPSSIM will backup all websites has data on server "
+echo "-------------------------------------------------------------------------"
+echo "Depending on number of websites and website size that backup time "
+echo "-------------------------------------------------------------------------"
+echo "can be fast or slow. VPSSIM do not backup: $mainsite"
+echo "=========================================================================" 
+read -r -p "You want backup all websites ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "========================================================================="
+echo "PLEASE DO NOT TURNOFF THIS CREEEN !"
+echo "========================================================================="
+sleep 2
+rm -rf /home/$mainsite/private_html/listbackup*
+echo "========================================================================================================================" > /home/$mainsite/private_html/listbackup-AW$randomcode.txt
+echo "                              Link Download All Backup Files - Created by VPSSIM" >> /home/$mainsite/private_html/listbackup-AW$randomcode.txt
+echo "========================================================================================================================" >> /home/$mainsite/private_html/listbackup-AW$randomcode.txt
+echo "" >> /home/$mainsite/private_html/listbackup-AW$randomcode.txt
+
+dobackup="/tmp/checksite-list"
+while read -r website
+    do
+saoluucode
+ done < "$dobackup"
+clear
+echo "========================================================================="
+echo "There are $sowebsitetrenserver website on server"
+echo "-------------------------------------------------------------------------"
+echo "Website has data: $sowebsitecodulieu"
+	if [ "$(ls -1 /tmp/saoluuwebsitethanhconghostingaz | wc -l)" == "$sowebsitecodulieu" ]; then
+	echo "-------------------------------------------------------------------------"
+	echo "Backup $sowebsitecodulieu website successfully"
+	else
+	echo "-------------------------------------------------------------------------"
+	echo "Backup failed $(ls -1 /tmp/saoluuwebsitethatbaihostingaz | wc -l) website"
+	echo "-------------------------------------------------------------------------"
+	echo "Failed Backup:"
+	echo "-------------------------------------------------------------------------"
+	ls /tmp/saoluuwebsitethatbaihostingaz
+	fi
+if [ ! "$(ls -1 /tmp/saoluuwebsitethatbaihostingaz | wc -l)" == "$sowebsitecodulieu" ]; then
+echo "-------------------------------------------------------------------------"
+echo "List Backup Files:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/listbackup-AW$randomcode.txt"
+fi
+rm -rf /tmp/*hostingaz*
+/etc/vpssim/menu/vpssim-sao-luu
+
+   ;;
+    *)
+    clear
+    rm -rf /tmp/*hostingaz*
+        echo "========================================================================= "
+        echo "Cancel backup all websites"
+        /etc/vpssim/menu/vpssim-sao-luu
+        ;;
+esac 

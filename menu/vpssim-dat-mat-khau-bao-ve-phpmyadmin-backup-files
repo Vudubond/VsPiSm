@@ -1,0 +1,96 @@
+#!/bin/sh
+. /home/vpssim.conf
+. /etc/vpssim/pwprotect.default
+if [ ! -d /etc/nginx/pwprotect ]; then
+mkdir -p /etc/nginx/pwprotect
+fi
+if [ ! -f /etc/nginx/.htpasswd ]; then
+clear
+echo "========================================================================="
+echo "You must create default User & password before using this function. "
+echo "-------------------------------------------------------------------------"
+echo "Create it by: VPSSIM Menu => Default User & Password."
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+exit
+fi
+
+if [ "$(grep auth_basic_user_file /etc/nginx/conf.d/$mainsite.conf)" == "" ] ; then 
+echo "========================================================================="
+echo "Use this function to ENABLE protection phpMyAdmin and backup files"
+echo "-------------------------------------------------------------------------"
+echo "memcache.php, ocp.php..."
+echo "-------------------------------------------------------------------------"
+echo "Login Infomation: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to ENABLE protection phpMyAdmin ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+echo "Please wait ... "
+sleep 1
+rm -rf /tmp/baovephpmyadmin
+   cat >> "/tmp/baovephpmyadmin" <<END
+sed -i "/\/home\/$mainsite\/private_html;/aauth_basic \"Authorization Required\";" /etc/nginx/conf.d/$mainsite.conf
+sed -i "/.*Authorization\ Required.*/aauth_basic_user_file  /etc/nginx/.htpasswd;" /etc/nginx/conf.d/$mainsite.conf
+END
+chmod +x /tmp/baovephpmyadmin
+/tmp/baovephpmyadmin
+rm -rf /tmp/baovephpmyadmin
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else 
+systemctl reload nginx
+fi
+;;
+    *)
+       clear 
+echo "========================================================================= "
+echo "Cancel config protection phpMyAdmin "
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+        ;;
+esac
+clear 
+echo "========================================================================= "
+echo "ENABLED config protection phpMyAdmin, ocp.php, memcache.php ..."
+echo "-------------------------------------------------------------------------"
+echo "Login infomation: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+
+else
+
+echo "========================================================================="
+echo "You have ENABLED protection phpMyAdmin, backup files, ocp.php ..."
+echo "-------------------------------------------------------------------------"
+echo "Login Infomation: "
+echo "-------------------------------------------------------------------------"
+echo "Username: $userdefault | Password: $passdefault"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to DISABLE this function ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+echo "Please wait ... "
+sleep 1
+sed -i '/auth_basic/d' /etc/nginx/conf.d/$mainsite.conf
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else 
+systemctl reload nginx
+fi
+;;
+    *)
+       clear 
+echo "========================================================================= "
+echo "Cancel DISABLE protection phpMyAdmin "
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+        ;;
+esac
+clear 
+echo "========================================================================= "
+echo "DISABLED protection phpMyAdmin "
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+fi

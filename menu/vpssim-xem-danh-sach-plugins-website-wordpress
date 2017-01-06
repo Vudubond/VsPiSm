@@ -1,0 +1,55 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+rans=`date |md5sum |cut -c '1-5'`
+  echo "========================================================================="
+  echo "Use this function to get list plugins & themes installed in website"
+  echo "========================================================================="
+echo -n "Type in website: " 
+read website
+
+if [ "$website" = "" ]; then
+echo "========================================================================="
+echo "You typed wrong, please type in accurately!."
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a dmomain name"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ ! -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "Can not discover $website"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+if [ ! -f /home/$website/public_html/wp-config.php ]; then
+clear
+echo "========================================================================="
+echo "$website maybe not a wordrepess website or not installed wp code"
+echo "-------------------------------------------------------------------------"
+echo "Please setup wordpress code first or try an other domain"
+/etc/vpssim/menu/vpssim-wordpress-tools-menu
+exit
+fi
+
+echo "========================================================================="
+echo "Discovered $website using Wordpress code in system"
+echo "-------------------------------------------------------------------------"
+echo "THEMES:"
+cd /home/$website/public_html
+wp theme list --allow-root
+echo "PLUGINS:"
+wp plugin list --allow-root
+cd

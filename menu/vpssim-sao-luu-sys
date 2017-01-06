@@ -1,0 +1,44 @@
+#!/bin/bash
+. /home/vpssim.conf
+echo "========================================================================="
+echo "Use this function to backup all config files & Vitual hosts files (vhost)"
+echo "-------------------------------------------------------------------------"
+echo "List files and directory will be backuped: server.cnf, www.conf, php.ini"
+echo "-------------------------------------------------------------------------"
+echo "php-fpm.conf and Nginx directory ( Vhost, SSL ...)" 
+echo "========================================================================="
+read -r -p "You want to backup config files & vhost ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+sleep 1
+rm -rf /home/$mainsite/private_html/Backupconfigandvhost*
+backupsys=`date |md5sum |cut -c '1-12'` 
+mkdir -p /usr/local/backup-system
+cp -r /etc/nginx /usr/local/backup-system/
+\cp -uf /etc/my.cnf.d/server.cnf /usr/local/backup-system/
+\cp -uf /etc/php.ini /usr/local/backup-system/
+\cp -uf /etc/php-fpm.conf /usr/local/backup-system/
+cp -r /etc/php-fpm.d/www.conf /usr/local/backup-system/
+cd /usr/local/backup-system/
+zip -r backupsys.zip *
+mv backupsys.zip /home/$mainsite/private_html/Backupconfigandvhost-$backupsys.zip
+cd
+rm -rf /usr/local/backup-system
+clear
+echo "========================================================================="
+echo "Link Download Backup File:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/Backupconfigandvhost-$backupsys.zip"
+/etc/vpssim/menu/vpssim-tien-ich
+
+
+;;
+    *)
+       clear
+echo "========================================================================= "
+echo "Cancel Create backup for config files & Vhost."
+/etc/vpssim/menu/vpssim-tien-ich
+        ;;
+esac

@@ -1,0 +1,282 @@
+#!/bin/bash
+roc_VERSION=1.2.3
+. /home/vpssim.conf
+echo "========================================================================="
+echo "Add Website + Auto Setup Wordpress + Config Vhost For Redis Cache"
+echo "-------------------------------------------------------------------------"
+echo "After add domain to VPS, Your Website will ready to run."
+echo "-------------------------------------------------------------------------"
+echo "You do not need setup wordpress code."
+echo "-------------------------------------------------------------------------"
+echo "Plugins pre-install: "
+echo "-------------------------------------------------------------------------"
+echo "Redis Object Cache, Nginx Helper, WP Limit Attemps, No Category Base"
+echo "========================================================================="
+echo -n "Type in the domain you want to add [ENTER]: " 
+read website
+website=`echo $website | tr '[A-Z]' '[a-z]'`
+if [ "$website" = "" ]; then
+clear
+echo "========================================================================="
+echo "You must type in the domain."
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$website" =~ $kiemtradomain3 ]]; then
+	website=`echo $website | tr '[A-Z]' '[a-z]'`
+clear
+echo "========================================================================="
+echo "$website maybe not a domain name!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi
+if [ -f /etc/nginx/conf.d/$website.conf ]; then
+clear
+echo "========================================================================="
+echo "Discover that $website is existed in the system!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi
+echo "-------------------------------------------------------------------------"
+echo -n "Type in user for wordpress admin [ENTER]: " 
+read adminwp
+if [ "$adminwp" = "" ]; then
+echo "========================================================================="
+echo "You must type in user for wordpress admin."
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi
+if [[ ! ${#adminwp} -ge 5 ]]; then
+clear
+echo "========================================================================="
+echo "User admin must be at least 5 characters long "
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi 
+checkuseradmin="^[a-zA-Z0-9_][-a-zA-Z0-9_]{0,61}[a-zA-Z0-9_]$";
+if [[ ! "$adminwp" =~ $checkuseradmin ]]; then
+clear
+echo "========================================================================="
+echo "You must use only numbers, letters for user admin."
+echo "-------------------------------------------------------------------------"
+echo "Please try again  !"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi 
+echo "-------------------------------------------------------------------------"
+echo "Password for $adminwp must be at least 8 characters long"
+echo "-------------------------------------------------------------------------"
+echo -n "Type in password for $adminwp [ENTER]: " 
+read passwp
+if [[ ! ${#passwp} -ge 8 ]]; then
+clear
+echo "========================================================================="
+echo "Password for $adminwp must be at least 8 characters long "
+echo "-------------------------------------------------------------------------"
+echo "Please try again !"
+/etc/vpssim/menu/vpssim-them-website-menu
+exit
+fi  
+/etc/vpssim/menu/vpssim-enable-tat-ca-cac-ham-php-php.ini
+    cat > "/etc/nginx/conf.d/$website.conf" <<END
+server {
+	    server_name www.$website;
+	    rewrite ^(.*) http://$website\$1 permanent;
+    	}
+server {
+	    listen   80;
+    	access_log off;
+    	# access_log   /home/$website/logs/access_log;
+    	error_log off;
+    	# error_log /home/$website/logs/error.log;
+    	add_header X-Frame-Options SAMEORIGIN;
+		add_header X-Content-Type-Options nosniff;
+		add_header X-XSS-Protection "1; mode=block";
+		root /home/$website/public_html;
+include /etc/nginx/conf/ddos2.conf;
+	index index.php index.html index.htm;
+    	server_name $website;
+
+#///////////////////////////////////////////////////////
+# You can use only 1 rule (AAA or BBB or CCC or DDD)
+# Please do not delete line AAA, BBB, CCC or DDD. Only Comment it if you do not use. 
+# All of them need for [ Config Vhost For Plugin Cache ] function in [ Wordpress Blog Tools ]
+#///////////////////////////////////////////////////////
+
+# Run all the websites (Wordpress, Xenforo, Joomla, Phpbb .... ),if you use your rule, comment the line below (AAA)
+include /etc/nginx/conf/all.conf;
+
+# If you use your rule, comment the line above , and  Uncoment 3 lines belows and set your rule within it.. (BBB)
+#location / {
+#Uncomment 3 lines and set your rules here!
+#}
+
+# Rule cho wordpress + Plugin wp super cache. (CCC)
+#include /etc/nginx/conf/supercache.conf;  
+
+# Rule cho wordpress + Plugin W3 Total Cache. (DDD)
+#include /etc/nginx/conf/w3total.conf;  
+
+# Security, sql injection propeller ....(uncoment if you want to use). Because some website plugins do not run with this config, so VPSSIM to turn off default
+# And do not delete the line below or VPSSIM will not work !
+#include /etc/nginx/conf/block.conf;
+
+# Config Cache Static Files
+include /etc/nginx/conf/staticfiles.conf;
+ 
+# Error Page
+#error_page 403 /errorpage_html/403.html;
+#error_page 404 /errorpage_html/404.html;
+#error_page 405 /errorpage_html/405.html;
+#error_page 502 /errorpage_html/502.html;
+#error_page 503 /errorpage_html/503.html;
+#error_page 504 /errorpage_html/504.html;
+#location ^~ /errorpage_html/ {
+#   internal;
+#    root /home/$website;
+#    access_log              off;
+#}
+ 
+    	location ~ \.php$ {
+		fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        include /etc/nginx/fastcgi_params;
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+		fastcgi_connect_timeout 250;
+		fastcgi_send_timeout 250;
+		fastcgi_read_timeout 250;
+		fastcgi_buffer_size 256k;
+		fastcgi_buffers 4 256k;
+		fastcgi_busy_buffers_size 256k;
+		fastcgi_temp_file_write_size 256k;
+		fastcgi_intercept_errors on;
+        fastcgi_param SCRIPT_FILENAME /home/$website/public_html\$fastcgi_script_name;
+    	}
+	
+
+#include /etc/nginx/conf/phpstatus.conf;
+include /etc/nginx/conf/drop.conf;
+
+    }
+END
+mkdir -p /home/$website/errorpage_html && cp -r /etc/vpssim/errorpage_html/*.html /home/$website/errorpage_html
+echo "$website" > /tmp/databasename.txt
+#echo $website | sed "s/\./_/" | sed "s/\-/_/" | cut -c1-14  > /tmp/databasename.txt  
+sed -i 's/\./_/g' /tmp/databasename.txt
+sed -i 's/\-/_/g' /tmp/databasename.txt
+random=`date |md5sum |cut -c '1-4'`
+randomwp=`date |md5sum |cut -c '1-7'`
+dataname=`cat /tmp/databasename.txt | cut -c1-11`_$random
+username=`cat /tmp/databasename.txt | sed "s/\_//" | sed "s/\_//" | sed "s/\_//" | sed "s/\_//" | cut -c1-10`$random
+password=`date |md5sum |cut -c '14-29'`
+passworduseradmin=`date |md5sum |cut -c '1-15'`
+rm -rf /tmp/databasename.txt
+cat > "/tmp/config.temp" <<END
+CREATE DATABASE $dataname COLLATE utf8_general_ci;
+END
+
+mysql -u root -p$mariadbpass < /tmp/config.temp
+rm -f /tmp/config.temp
+
+ cat > "/tmp/config.temp" <<END
+CREATE USER '$username'@'localhost' IDENTIFIED BY '$password';
+END
+
+	mysql -u root -p$mariadbpass < /tmp/config.temp
+	rm -f /tmp/config.temp
+
+    cat > "/tmp/config.temp" <<END
+GRANT ALL PRIVILEGES ON $dataname . * TO '$username'@'localhost';
+END
+	mysql -u root -p$mariadbpass < /tmp/config.temp
+	rm -f /tmp/config.temp
+
+    cat > "/tmp/config.temp" <<END
+FLUSH PRIVILEGES;
+END
+	mysql -u root -p$mariadbpass < /tmp/config.temp
+	rm -f /tmp/config.temp
+
+echo "=========================================================================" >> /home/DBinfo.txt
+echo "Database: $dataname - Created on: $(date +%d/%m/%Y) when add $website to VPS" >> /home/DBinfo.txt
+echo "=========================================================================" >> /home/DBinfo.txt
+echo "Data name: $dataname" >> /home/DBinfo.txt
+echo "Username: $username" >> /home/DBinfo.txt
+echo "password: $password" >> /home/DBinfo.txt
+echo "" >> /home/DBinfo.txt
+
+
+    mkdir -p /home/$website/public_html
+    mkdir -p /home/$website/logs
+    cd /home/$website/public_html
+    echo "========================================================================="
+    echo "Prepare to download & Install Wordpress ..."
+    sleep 3
+    wget https://wordpress.org/latest.zip
+    unzip -q latest.zip
+    mv wordpress/* ./
+    rm -rf wordpress
+    rm -rf latest.zip
+    
+chown -R nginx:nginx /home/$website/public_html/
+find /home/$website/public_html/ -type d -exec chmod g+s {} \;
+\cp -uf /etc/vpssim/menu/robots.txt /home/$website/public_html/
+#echo "define('FS_METHOD','direct');" >> /home/$website/public_html/wp-config-sample.php
+wp core config --dbname=$dataname --dbuser=$username --dbpass=$password --allow-root
+perl -pi -e "s/= 'wp_';/= 'wp_${randomwp}_';/g" wp-config.php
+wp core install --url="http://$website" --title="$website" --admin_user="$adminwp" --admin_password="$passwp" --admin_email="admin@$website" --allow-root
+sed -i "/.*DB_COLLATE*./a\//* Authentication Unique Keys and Salts." /home/$website/public_html/wp-config.php
+#echo "define('FS_METHOD','direct');" >> /home/$website/public_html/wp-config.php
+sed -i "/.*Authentication*./adefine('WP_CACHE_KEY_SALT', '$website');" /home/$website/public_html/wp-config.php
+sed -i "/define('WP_CACHE_KEY_SALT', '$website');/adefine('WP_CACHE', true);" /home/$website/public_html/wp-config.php
+
+wp plugin install nginx-helper --activate --allow-root
+wp plugin install wp-limit-login-attempts ---allow-root
+wp plugin install no-category-base-wpml --activate --allow-root
+wp plugin install redis-cache --activate --allow-root
+#cd /home/$website/public_html/wp-content/plugins/
+#wget https://downloads.wordpress.org/plugin/redis-cache.${roc_VERSION}.zip
+#unzip redis-cache.${roc_VERSION}.zip
+#rm -rf redis-cache.${roc_VERSION}.zip
+yes | cp -rf /home/$website/public_html/wp-content/plugins/redis-cache/includes/object-cache.php /home/$website/public_html/wp-content/object-cache.php
+chown -R nginx:nginx /home/$website/public_html/wp-content
+cd
+chown -R nginx:nginx /home/$website/public_html/
+find /home/$website/public_html/ -type d -exec chmod g+s {} \;
+/etc/vpssim/menu/vpssim-re-config-cac-ham-php-disable-php.ini
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service php-fpm restart
+service redis restart
+else
+systemctl restart php-fpm.service
+systemctl restart redis.service
+fi
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx reload
+else 
+systemctl reload nginx
+fi
+clear
+echo "========================================================================="
+echo "$website is added to server and Setup wordpress code successfully "
+echo "-------------------------------------------------------------------------"
+echo "Home Folder: /home/$website/public_html"
+echo "-------------------------------------------------------------------------"
+echo "Vhost File: /etc/nginx/conf.d/$website.conf"
+echo "-------------------------------------------------------------------------"
+echo "Admin Login infomation:"
+echo "-------------------------------------------------------------------------"
+echo "User Name: $adminwp  ||  Password: $passwp"
+echo "email: admin@$website"
+echo "-------------------------------------------------------------------------"
+echo "You can change this email in Wp-admin Dasboard !"
+echo "-------------------------------------------------------------------------"
+echo "Database's infomation saved in: /home/DBinfo.txt"
+/etc/vpssim/menu/vpssim-them-website-menu

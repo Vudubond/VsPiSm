@@ -1,0 +1,29 @@
+#!/bin/bash
+clear
+printf "=========================================================================\n"
+printf "            VPSSIM - Manage VPS/Server by VPSSIM \n"
+printf "=========================================================================\n"
+printf "                      Fix Session's Error                             \n"
+printf "=========================================================================\n"
+printf "                          \n"
+printf "This function fix error can't inter Phpmyadmin because of Session's error \n"
+printf "If VPS/Server has this error, when inter Phpmyadmin it shows: \n"
+printf "                          \n"
+printf "Cannot start session without errors\n"
+echo "-------------------------------------------------------------------------"
+printf "Please check errors given in your PHP and/or \n"
+echo "-------------------------------------------------------------------------"
+printf "Webserver log file and configure your PHP installation properly.\n"
+printf "                          \n"
+printf "=========================================================================\n"
+
+read -p "Press [Enter] to fix error ..."
+echo "Please wait...";sleep 1 
+chmod 777 /var/lib/php/session/
+clear
+echo "========================================================================="
+echo "Session's error is fixed"
+echo "-------------------------------------------------------------------------"
+echo "You can inter Phpmyadmin to check."
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+

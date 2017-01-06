@@ -1,0 +1,67 @@
+#!/bin/sh
+. /home/vpssim.conf
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+sleep 1
+rm -rf /tmp/vpssim-websitelist
+ls /etc/nginx/conf.d > /tmp/vpssim-websitelist
+sed -i 's/\.conf//g' /tmp/vpssim-websitelist 
+rm -rf /tmp/checkautobackupvpssim
+mkdir -p /tmp/checkautobackupvpssim
+checkautobackup=$(cat /tmp/vpssim-websitelist)
+rm -rf /tmp/chitietbackupauto
+randomcode=`date |md5sum |cut -c '1-12'`
+for websitecheck in $checkautobackup 
+do
+if [ -f /bin/vpssim-backupcode-$websitecheck ]; then
+ if [ -f /etc/cron.d/vpssim.code.cron ]; then
+     if [ ! "$(grep vpssim-backupcode-$websitecheck /etc/cron.d/vpssim.code.cron)" == "" ]; then
+     touch /tmp/checkautobackupvpssim/$websitecheck
+     if [ ! -f /tmp/chitietbackupauto ]; then
+     touch /tmp/chitietbackupauto
+     fi
+	if [ "$(grep VPSSIM /tmp/chitietbackupauto)" == "" ]; then
+	echo "=========================================================================" >> /tmp/chitietbackupauto
+	echo "Link Download Backup for Website - Created by VPSSIM" >> /tmp/chitietbackupauto
+	echo "=========================================================================" >> /tmp/chitietbackupauto
+	echo "" >> /tmp/chitietbackupauto
+	echo "" >> /tmp/chitietbackupauto
+	echo "-------------------------------------------------------------------------" >> /tmp/chitietbackupauto
+	echo "Note:" >> /tmp/chitietbackupauto
+	echo "-------------------------------------------------------------------------" >> /tmp/chitietbackupauto
+	echo "Download Link Will Avaiable After Backup Website successful" >> /tmp/chitietbackupauto
+	echo "-------------------------------------------------------------------------" >> /tmp/chitietbackupauto
+	echo "" >> /tmp/chitietbackupauto
+	fi
+pathname=$(grep "\/home\/$mainsite\/private_html\/backup\/$websitecheck" /bin/vpssim-backupcode-$websitecheck | awk 'NR==6 {print $3}')
+filename=$(basename $pathname)
+echo "=========================================================================" >> /tmp/chitietbackupauto
+echo "Website $websitecheck:" >> /tmp/chitietbackupauto
+echo "-------------------------------------------------------------------------" >> /tmp/chitietbackupauto
+echo "http://$serverip:$priport/backup/$websitecheck/$filename" >> /tmp/chitietbackupauto
+echo "-------------------------------------------------------------------------" >> /tmp/chitietbackupauto
+echo "" >> /tmp/chitietbackupauto    
+     fi
+ fi
+fi  
+done
+if [  "$(ls -1 /tmp/checkautobackupvpssim | wc -l)" == "0" ]; then
+clear
+echo "========================================================================="
+echo "Current, there is no website enabled auto backup"
+else
+rm -rf /home/$mainsite/private_html/linkAUTOBackupWeb*
+mv /tmp/chitietbackupauto /home/$mainsite/private_html/linkAUTOBackupWeb-$randomcode.txt
+clear
+echo "========================================================================="
+echo "There are $(ls -1 /tmp/checkautobackupvpssim | wc -l) website being Enabled Auto Backup code"
+echo "-------------------------------------------------------------------------"
+ls /tmp/checkautobackupvpssim  | pr -2 -t
+echo "========================================================================="
+echo "List Link Download Backup File:"
+echo "-------------------------------------------------------------------------"
+echo "http://$serverip:$priport/linkAUTOBackupWeb-$randomcode.txt"
+fi
+rm -rf /tmp/*vpssim*
+rm -rf /tmp/chitietbackupauto
+/etc/vpssim/menu/vpssim-sao-luu

@@ -1,0 +1,106 @@
+#!/bin/sh
+. /home/vpssim.conf
+rm -rf /tmp/*hostingaz*
+ls /etc/nginx/conf.d > /tmp/vpssim-websitelist
+cat > "/tmp/vpssim-replace" <<END
+sed -i '/$mainsite/d' /tmp/vpssim-websitelist
+END
+chmod +x /tmp/vpssim-replace
+/tmp/vpssim-replace
+checkwebsitenumbers=$(cat /tmp/vpssim-websitelist | wc -l)
+if [ "$checkwebsitenumbers" == "0" ]; then
+rm -rf /tmp/*vpssim*
+rm -rf /tmp/*hostingaz*
+clear
+echo "========================================================================="
+echo "You have not added any  website to server yet"
+echo "-------------------------------------------------------------------------"
+echo "Please add a new website to server before use this function."
+/etc/vpssim/menu/pagespeed/vpssim-pagespeed-menu
+fi
+echo "========================================================================="
+echo "Use this function to Enable Nginx Pagespeed for website"
+echo "-------------------------------------------------------------------------"
+nhapdulieu () {
+echo -n "Type in the website [ENTER]: " 
+read domain
+if [ "$domain" = "" ]; then
+echo "-------------------------------------------------------------------------"
+echo "You typed wrong, please type in accurately"
+echo "-------------------------------------------------------------------------"
+nhapdulieu
+fi
+kiemtradomain3="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,14}$";
+if [[ ! "$domain" =~ $kiemtradomain3 ]]; then
+	domain=`echo $domain | tr '[A-Z]' '[a-z]'`
+echo "-------------------------------------------------------------------------"
+echo "$domain maybe not a domain name!"
+echo "-------------------------------------------------------------------------"
+nhapdulieu
+fi
+if [ ! -f /etc/nginx/conf.d/$domain.conf ]; then
+if [ ! -f /etc/nginx/conf.d/www.$domain.conf ]; then
+echo "========================================================================="
+echo "Can not discover $domain "
+echo "-------------------------------------------------------------------------"
+nhapdulieu
+fi
+fi
+if [ -f /etc/nginx/conf.d/$domain.conf ]; then
+if [ "$(grep "include /etc/nginx/ngx_pagespeed.conf;" /etc/nginx/conf.d/$domain.conf)" == "include /etc/nginx/ngx_pagespeed.conf;" ]; then
+clear
+echo "========================================================================="
+echo "$domain is already enable Nginx Pagespeed !"
+/etc/vpssim/menu/pagespeed/vpssim-pagespeed-menu
+exit
+fi
+fi
+
+if [ -f /etc/nginx/conf.d/www.$domain.conf ]; then
+if [ "$(grep "include /etc/nginx/ngx_pagespeed.conf;" /etc/nginx/conf.d/www.$domain.conf)" == "include /etc/nginx/ngx_pagespeed.conf;" ]; then
+clear
+echo "========================================================================="
+echo "$domain is already enable Nginx Pagespeed !"
+/etc/vpssim/menu/pagespeed/vpssim-pagespeed-menu
+exit
+fi
+fi
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to ENABLE Nginx Pagespeed for $domain ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "-------------------------------------------------------------------------"
+    echo "Please wait...."; sleep 1
+    cat > "/tmp/pagespeed.sh" <<END
+#!/bin/sh
+if [ -f /etc/nginx/conf.d/$domain.conf ]; then
+sed -i 's/#include \/etc\/nginx\/ngx_pagespeed.conf;/include \/etc\/nginx\/ngx_pagespeed.conf;/g' /etc/nginx/conf.d/$domain.conf
+else
+sed -i 's/#include \/etc\/nginx\/ngx_pagespeed.conf;/include \/etc\/nginx\/ngx_pagespeed.conf;/g' /etc/nginx/conf.d/www.$domain.conf
+fi
+END
+chmod +x /tmp/pagespeed.sh
+/tmp/pagespeed.sh
+rm -f /tmp/pagespeed.sh
+clear
+clear
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+fi
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "7" ]; then 
+systemctl restart nginx.service
+fi
+clear
+echo "========================================================================= "
+echo "Successfully ENABLE Nginx Pagespeed for $domain"
+/etc/vpssim/menu/pagespeed/vpssim-pagespeed-menu
+        ;;
+    *)
+        clear
+echo "========================================================================= "
+echo "Cancel ENABLE Nginx Pagespeed for $domain "
+/etc/vpssim/menu/pagespeed/vpssim-pagespeed-menu
+        ;;
+esac
+}
+nhapdulieu

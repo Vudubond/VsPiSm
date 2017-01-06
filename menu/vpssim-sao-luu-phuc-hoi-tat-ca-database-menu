@@ -1,0 +1,25 @@
+#!/bin/sh
+prompt="Type in your choice (4-Exit):"
+options=("Full Backup Database" "Link download Backup File" "Restore Databases" "Exit" )
+printf "=========================================================================\n"
+printf "               VPSSIM - Manage VPS/Server by VPSSIM.COM \n"
+printf "=========================================================================\n"
+printf "                    Backup & Restore All Database\n"
+printf "=========================================================================\n"
+
+PS3="$prompt"
+select opt in "${options[@]}" ; do 
+
+    case "$REPLY" in
+
+    1 ) /etc/vpssim/menu/vpssim-befor-sao-luu-tat-ca-database;;
+    2 ) /etc/vpssim/menu/vpssim-link-sao-luu-all-database;;
+    3 ) /etc/vpssim/menu/vpssim-befor-phuc-hoi-tat-ca-database;;
+    4 ) clear && /etc/vpssim/menu/vpssim-them-xoa-database;;
+
+    
+    *) echo "You typed wrong, Please type in the ordinal number on the list !";continue;;
+
+    esac
+
+done

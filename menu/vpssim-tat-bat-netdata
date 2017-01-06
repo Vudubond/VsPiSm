@@ -1,0 +1,79 @@
+#!/bin/bash
+. /home/vpssim.conf
+if [ ! -f /etc/vpssim/netdatasite.info ]; then
+clear
+echo "========================================================================="
+echo "You have not installed NetData for server !"
+/etc/vpssim/menu/vpssim-netdata-menu
+exit
+fi
+
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+	if [ "$(/sbin/service netdata status | awk 'NR==1 {print $5}')" == "running..." ]; then
+netdatast=bat
+	else
+netdatast=tat
+	fi
+fi
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "7" ]; then
+	if [ "`systemctl is-active netdata.service`" == "active" ]; then
+netdatast=bat
+	else
+netdatast=tat
+	fi
+fi
+
+if [ "$netdatast" = "bat" ]; then 
+echo "========================================================================="
+echo "Current NetData is being Enabled"
+echo "========================================================================="
+read -r -p "You want to Disable it ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "Please wait....";sleep 1
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service netdata stop
+else 
+systemctl stop netdata
+fi
+clear
+echo "========================================================================="
+echo "NetData has Disabled !"
+/etc/vpssim/menu/vpssim-netdata-menu
+        ;;
+    *)
+clear
+ echo "========================================================================="
+echo "Cancel  !"
+/etc/vpssim/menu/vpssim-netdata-menu
+        ;;
+esac
+exit
+fi
+echo "========================================================================="
+echo "Current NetData is being Disabled"
+echo "========================================================================="
+read -r -p "You want to enable it ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+    echo "Please wait....";sleep 1
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service netdata start
+else 
+systemctl start netdata
+fi
+clear
+        echo "========================================================================="
+        echo "NetData has Enabled !"
+/etc/vpssim/menu/vpssim-netdata-menu
+        ;;
+    *)
+               clear
+ echo "========================================================================="
+echo "Cancel !"
+/etc/vpssim/menu/vpssim-netdata-menu
+
+        ;;
+esac
+exit
+fi

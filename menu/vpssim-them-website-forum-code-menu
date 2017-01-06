@@ -1,0 +1,32 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+
+prompt="Type in your choice: "
+options=( "PhpBB" "SMF" "MyBB" "Cancel")
+printf "=========================================================================\n"
+printf "CHOOSE FORUM CODE YOU WANT TO USE\n"
+printf "=========================================================================\n"
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+
+    case "$REPLY" in
+    1) vhostconfig="phpbb"; break;;
+    2) vhostconfig="smf"; break;;
+    3) vhostconfig="mybb"; break;;
+    4) vhostconfig="Cancel"; break;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+###################################
+if [ "$vhostconfig" = "phpbb" ]; then
+/etc/vpssim/menu/vpssim-them-website-va-forum-phpbb
+###################################
+elif [ "$vhostconfig" = "smf" ]; then
+/etc/vpssim/menu/vpssim-them-website-va-forum-smf
+###################################
+elif [ "$vhostconfig" = "mybb" ]; then
+/etc/vpssim/menu/vpssim-them-website-va-forum-mybb
+else 
+clear && /etc/vpssim/menu/vpssim-befor-them-website-menu
+fi

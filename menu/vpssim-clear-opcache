@@ -1,0 +1,64 @@
+#!/bin/bash 
+. /home/vpssim.conf
+if [ -f /etc/php.d/opcache.ini ]; then
+
+
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service php-fpm restart
+else
+systemctl restart php-fpm.service
+fi
+
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+test_php=$(/sbin/service php-fpm status | awk 'NR==1 {print $3}')
+if [ "$test_php" == "stopped" ]; then
+clear
+echo "========================================================================="
+echo "Zend Opcache can not clear because PHP-FPM can not restart. "
+echo "-------------------------------------------------------------------------"
+echo "Maybe you did a wrong config !!"
+/etc/vpssim/menu/vpssim-opcache-menu
+exit
+fi
+fi
+
+
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "7" ]; then 
+test_php=$(/bin/systemctl status  php-fpm.service | awk 'NR==3 {print $2}')
+if [ "$test_php" == "inacctive" ]; then
+clear
+echo "========================================================================="
+echo "Zend Opcache can not clear because PHP-FPM can not restart. "
+echo "-------------------------------------------------------------------------"
+echo "Maybe you did a wrong config !!"
+/etc/vpssim/menu/vpssim-opcache-menu
+exit
+fi
+fi
+
+
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "7" ]; then 
+test_php=$(/bin/systemctl status  php-fpm.service | awk 'NR==3 {print $2}')
+if [ "$test_php" == "failed" ]; then
+clear
+echo "========================================================================="
+echo "Zend Opcache can not clear because PHP-FPM can not restart. "
+echo "-------------------------------------------------------------------------"
+echo "Maybe you did a wrong config !!"
+/etc/vpssim/menu/vpssim-opcache-menu
+exit
+fi
+fi
+echo "Please wait...";sleep 1 
+clear
+echo "========================================================================= "
+echo "You have finished clearing Opcache "
+/etc/vpssim/menu/vpssim-opcache-menu
+fi
+clear
+echo "========================================================================= "
+echo "OPcache is disabled on your VPS"
+echo "Lets enable Opcache to get the best VPS productivity"
+/etc/vpssim/menu/vpssim-opcache-menu
+exit
+fi

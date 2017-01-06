@@ -1,0 +1,50 @@
+#!/bin/sh
+. /home/vpssim.conf
+rm -rf /tmp/*hostingaz*
+ls /etc/nginx/conf.d > /tmp/vpssim-websitelist
+cat > "/tmp/vpssim-replace" <<END
+sed -i '/$mainsite/d' /tmp/vpssim-websitelist
+END
+chmod +x /tmp/vpssim-replace
+/tmp/vpssim-replace
+checkwebsitenumbers=$(cat /tmp/vpssim-websitelist | wc -l)
+if [ "$checkwebsitenumbers" == "0" ]; then
+rm -rf /tmp/*vpssim*
+rm -rf /tmp/*hostingaz*
+clear
+echo "========================================================================="
+echo "You have not added any  website to server yet"
+echo "-------------------------------------------------------------------------"
+echo "Please add a new website to server before use this function."
+/etc/vpssim/menu/pagespeed/vpssim-pagespeed-menu
+fi
+rm -rf /tmp/*hostingaz*
+mkdir -p /tmp/sitedangbatpagespeedhostingaz
+ls /etc/nginx/conf.d > /tmp/vpssim-websitelist
+sed -i 's/\.conf//g' /tmp/vpssim-websitelist 
+sowebsitetrenserver=$(cat /tmp/vpssim-websitelist | wc -l)
+websitetrenserver=$(cat /tmp/vpssim-websitelist)
+for website in $websitetrenserver 
+do
+if [ "$(grep "ngx_pagespeed.conf" /etc/nginx/conf.d/$website.conf)" == "include /etc/nginx/ngx_pagespeed.conf;" ]; then
+touch /tmp/sitedangbatpagespeedhostingaz/$website
+fi
+done
+echo "-------------------------------------------------------------------------"
+echo "Please wait ..."
+sleep 1
+clear
+echo "========================================================================="
+echo "Website on server: $sowebsitetrenserver"
+echo "-------------------------------------------------------------------------"
+if [ "$(ls -1 /tmp/sitedangbatpagespeedhostingaz | wc -l)" == "0" ]; then
+echo "Website Enabled Nginx Pagespeed: 0"
+else
+echo "Website Enabled Nginx Pagespeed: $(ls -1 /tmp/sitedangbatpagespeedhostingaz | wc -l)"
+echo "-------------------------------------------------------------------------"
+ls /tmp/sitedangbatpagespeedhostingaz | pr -3 -t
+fi
+rm -rf /tmp/*hostingaz*
+rm -rf /tmp/*vpssim*
+/etc/vpssim/menu/pagespeed/vpssim-pagespeed-menu
+

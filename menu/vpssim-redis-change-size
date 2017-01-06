@@ -1,0 +1,57 @@
+#!/bin/bash 
+. /home/vpssim.conf
+
+if [ "$(redis-cli ping)" = "PONG" ]; then
+
+echo "========================================================================="
+echo "This function will config Max Ram Redis can use"
+echo "-------------------------------------------------------------------------"
+echo "Max RAM for Redis must be a number within range of (40 - $(calc $( free -m | awk 'NR==2 {print $2}' )/5))."
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the Max Memory that Redis can use [ENTER]: " 
+read maxredis
+
+if [ "$maxredis" = "" ]; then
+clear
+echo "========================================================================="
+echo "You typed wrong, please fill accurately"
+/etc/vpssim/menu/vpssim-redis-menu
+exit
+fi
+
+if ! [[ $maxredis -ge 40 && $maxredis -le $(calc $( free -m | awk 'NR==2 {print $2}' )/5)  ]] ; then  
+clear
+echo "========================================================================="
+echo "$maxredis is wrong!"
+echo "-------------------------------------------------------------------------"
+echo "RAM for Redis must be a number within range of (40 - $(calc $( free -m | awk 'NR==2 {print $2}' )/5))."
+/etc/vpssim/menu/vpssim-redis-menu
+exit
+fi  
+echo "-------------------------------------------------------------------------"
+echo "Please wait ....."
+sleep 1
+rm -rf /etc/redis/redis.conf
+cat > "/etc/redis/redis.conf" <<END
+maxmemory ${maxredis}mb
+maxmemory-policy allkeys-lru
+END
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service redis restart
+else 
+systemctl restart redis.service
+fi
+clear
+echo "========================================================================="
+echo "Config Max Ram for Redis Successful"
+echo "-------------------------------------------------------------------------"
+echo "Redis can use Max Memory: $maxredis MB "
+/etc/vpssim/menu/vpssim-redis-menu
+else
+clear
+echo "========================================================================="
+echo "Redis Cache current Stopped"
+echo "-------------------------------------------------------------------------"
+echo "Please start it by command [ service redis start ]"
+/etc/vpssim/menu/vpssim-redis-menu
+fi

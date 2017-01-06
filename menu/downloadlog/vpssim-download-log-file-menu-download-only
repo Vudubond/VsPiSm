@@ -1,0 +1,52 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+if [ ! -d /home/$mainsite/private_html/server-log ]; then
+mkdir -p /home/$mainsite/private_html/server-log
+fi
+prompt="Type in your choice: "
+options=( "Nginx Log" "PHP-FPM Log" "MySQL Log" "PHP-FPM Error Log" "Secure Log" "Exim Log" "PHP-FPM Slow Log" "MySQL Slow Log" "Cancel")
+echo "========================================================================="
+echo "If the log file size is less than or equal to 1M"
+echo "-------------------------------------------------------------------------"
+echo "VPSSIM auto convert it to text file so that you can view in the browser"
+echo "========================================================================="
+echo "CHOOSE LOG FILE YOU WANT TO DOWNLOAD"
+echo "========================================================================="
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+
+    case "$REPLY" in
+    1) downloadcase="NginxLog"; break;;
+    2) downloadcase="phpfpmlog"; break;;
+    3) downloadcase="mysqllog"; break;;
+    4) downloadcase="phpfpmerrorlog"; break;;
+    5) downloadcase="securelog"; break;;
+    6) downloadcase="eximlog"; break;;
+    7) downloadcase="phpfpmslowlog"; break;;
+    8) downloadcase="mysqlslowlog"; break;;
+    9) downloadcase="Cancel"; break;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+
+if [ "$downloadcase" = "NginxLog" ]; then
+/etc/vpssim/menu/downloadlog/vpssim-download-log-nginx
+elif [ "$downloadcase" = "phpfpmlog" ]; then
+/etc/vpssim/menu/downloadlog/vpssim-download-log-php-fpm
+elif [ "$downloadcase" = "phpfpmslowlog" ]; then
+/etc/vpssim/menu/downloadlog/vpssim-download-log-php-fpm-slow
+elif [ "$downloadcase" = "phpfpmerrorlog" ]; then
+/etc/vpssim/menu/downloadlog/vpssim-download-log-php-fpm-error
+elif [ "$downloadcase" = "mysqllog" ]; then
+/etc/vpssim/menu/downloadlog/vpssim-download-log-mysql
+elif [ "$downloadcase" = "mysqlslowlog" ]; then
+/etc/vpssim/menu/downloadlog/vpssim-download-log-mysql-slow
+elif [ "$downloadcase" = "securelog" ]; then
+/etc/vpssim/menu/downloadlog/vpssim-download-log-secure
+elif [ "$downloadcase" = "eximlog" ]; then
+/etc/vpssim/menu/downloadlog/vpssim-download-log-exim
+else 
+clear && /etc/vpssim/menu/vpssim-eroor-menu
+fi
+

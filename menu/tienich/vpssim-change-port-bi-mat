@@ -1,0 +1,92 @@
+#!/bin/sh
+. /home/vpssim.conf
+
+echo "========================================================================= "
+echo "Use this function to change secret port (Phpmyadmin port)"
+echo "-------------------------------------------------------------------------"
+read -r -p "You want to change phpmyadmin port ? [y/N] " response
+case $response in
+    [yY][eE][sS]|[yY]) 
+
+echo "-------------------------------------------------------------------------"
+echo -n "Type in the current phpmyadmin port [ENTER]: " 
+read portbimat
+
+if [[ ! ${portbimat} =~ ^[0-9]+$ ]] ;then 
+clear
+echo "========================================================================="
+echo "Port you typed in: ${portbimat} is not a number."
+echo "-------------------------------------------------------------------------"
+echo "Please try again !" 
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+exit
+fi
+
+
+if [ "$(grep "listen   ${portbimat}" /etc/nginx/conf.d/$mainsite.conf)" == "" ]; then
+clear
+echo "========================================================================= "
+echo "${portbimat} is wrong!"
+echo "-------------------------------------------------------------------------"
+echo "Please try again !" 
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+exit
+fi
+
+echo -n "Type in the new phpmyadmin you want to setup [ENTER]:" 
+read portbimatmoi
+
+if [[ ! ${portbimatmoi} =~ ^[0-9]+$ ]] ;then 
+clear
+echo "========================================================================="
+echo "Port you typed in: ${portbimatmoi} is not a number."
+echo "-------------------------------------------------------------------------"
+echo "Please try again !" 
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+exit
+fi
+
+if [ "$portbimat" = "$portbimatmoi" ]; then
+clear
+echo "========================================================================="
+echo "$portbimatmoi is the current phpmyadmin port !"
+echo "-------------------------------------------------------------------------"
+echo "Please chose other port !" 
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+exit
+fi 
+
+
+cat > "/tmp/changeport-run" <<END
+sed -i 's/listen   $portbimat;/listen   $portbimatmoi;/g' /etc/nginx/conf.d/$mainsite.conf
+sed -i 's/priport="$portbimat"/priport="$portbimatmoi"/g' /home/vpssim.conf
+END
+
+chmod +x /tmp/changeport-run
+/tmp/changeport-run
+
+rm -rf /tmp/changeport-run
+
+echo "-------------------------------------------------------------------------"
+echo "Please wait...";sleep 1
+iptables -I INPUT -p tcp --dport $portbimat -j DROP
+iptables -I INPUT -p tcp --dport $portbimatmoi -j ACCEPT
+service iptables save
+if [ "$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release))" == "6" ]; then 
+service nginx restart
+else
+systemctl restart nginx.service
+fi
+sleep 1
+clear
+echo "========================================================================="
+echo "Changed phpmyadmin port successfully !"
+echo "-------------------------------------------------------------------------"
+echo "From now, new phpmyadmin port is: $portbimatmoi "
+/etc/vpssim/menu/vpssim-phpmyadmin-menu
+;;
+esac
+clear
+echo "========================================================================="
+echo "You cancel change phpmyadmin port !"
+/etc/vpssim/menu/vpssim-phpmyadmin-menu

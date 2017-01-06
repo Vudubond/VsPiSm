@@ -1,0 +1,38 @@
+#!/bin/bash 
+
+. /home/vpssim.conf
+echo "========================================================================="
+echo "Use this function to update themes and plugins for wordpress website"  
+echo "========================================================================="
+#prompt="Nhap lua chon cua ban: "
+prompt="Type in your choice: "
+options=( "Update 1 Website" "Update All Websites" "Cancel")
+printf "CHOOSE UPDATE 1 WEBSITE OR ALL WORDPRESS WEBSITE ON SERVER\n"
+printf "=========================================================================\n"
+PS3="$prompt"
+select opt in "${options[@]}"; do 
+
+    case "$REPLY" in
+    1) luachonupdate="update1site"; break;;
+    2) luachonupdate="updateall"; break;;
+    3) luachonupdate="Cancel"; break;;
+    *) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    #*) echo "You typed wrong, Please type in the ordinal number on the list";continue;;
+    esac  
+done
+###################################
+#Update 1 website
+###################################
+if [ "$luachonupdate" = "update1site" ]; then
+/etc/vpssim/menu/vpssim-nang-cap-plugins-themes-wordpress
+###################################
+#Update tat ca cac website
+###################################
+elif [ "$luachonupdate" = "updateall" ]; then
+/etc/vpssim/menu/vpssim-nang-cap-plugins-themes-tat-ca-website-wordpress
+###################################
+#Huy bo update
+###################################
+else 
+clear && /etc/vpssim/menu/vpssim-wordpress-tools-menu
+fi
